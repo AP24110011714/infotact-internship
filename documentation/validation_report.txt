@@ -1,0 +1,25 @@
+CAREFLOW: CLINICAL PATHWAY PROCESS MINING
+EVENT LOG VALIDATION REPORT
+============================================================
+
+Dataset: hospital_event_log_clean.csv
+Total event records: 3055
+Unique patient visits: 500
+Missing required values: 0
+Duplicate events: 0
+Invalid timestamps: 0
+
+VALIDATION CHECKS
+------------------------------------------------------------
+Required columns present: PASS
+No invalid timestamps: PASS
+No missing required values: PASS
+No exact duplicate events: PASS
+Every event has a case ID: PASS
+Every event has an activity: PASS
+Timestamps ordered within each case: PASS
+At least one patient visit exists: PASS
+Every case has at least one event: PASS
+Activities belong to the allowed list: PASS
+
+OVERALL VALIDATION STATUS: PASS
