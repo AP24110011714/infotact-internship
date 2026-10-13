@@ -1,0 +1,16 @@
+current_activity,next_activity,transition,case_count,average_waiting_minutes,median_waiting_minutes,maximum_waiting_minutes
+Doctor Consultation,Doctor Review,Doctor Consultation -> Doctor Review,448,49.526785714285715,53.0,90.0
+Doctor Consultation,Diagnosis,Doctor Consultation -> Diagnosis,1049,48.27359389895138,49.0,90.0
+Doctor Consultation,Blood Test,Doctor Consultation -> Blood Test,4509,48.03393213572854,48.0,90.0
+Treatment,Discharge,Treatment -> Discharge,7000,47.950714285714284,48.0,90.0
+Doctor Review,Diagnosis,Doctor Review -> Diagnosis,4065,47.86789667896679,48.0,90.0
+Blood Test,Diagnosis,Blood Test -> Diagnosis,1886,47.609756097560975,48.0,90.0
+X-Ray,Doctor Review,X-Ray -> Doctor Review,1663,47.59110042092604,48.0,90.0
+Diagnosis,Treatment,Diagnosis -> Treatment,7000,47.489,48.0,90.0
+Triage,Doctor Consultation,Triage -> Doctor Consultation,6999,47.43734819259894,48.0,90.0
+Triage,Doctor Review,Triage -> Doctor Review,1131,47.36693191865606,47.0,90.0
+Registration,Triage,Registration -> Triage,6999,47.30847263894842,47.0,90.0
+Blood Test,X-Ray,Blood Test -> X-Ray,1800,46.78944444444444,47.0,90.0
+X-Ray,Triage,X-Ray -> Triage,1131,46.747126436781606,47.0,90.0
+Doctor Consultation,X-Ray,Doctor Consultation -> X-Ray,994,46.74647887323944,45.5,90.0
+Blood Test,Doctor Review,Blood Test -> Doctor Review,823,46.70838396111786,48.0,90.0

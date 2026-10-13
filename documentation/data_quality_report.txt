@@ -9,11 +9,11 @@ C:\Users\bandi\Downloads\infotact-internship-git\data\raw\hospital_event_log_raw
 Output file:
 C:\Users\bandi\Downloads\infotact-internship-git\data\processed\hospital_event_log_clean.csv
 
-Initial event records: 3058
-Final event records: 3055
+Initial event records: 54500
+Final event records: 54497
 Records removed: 3
 
-Unique patient visits remaining: 500
+Unique patient visits remaining: 7000
 
 Invalid timestamps detected: 1
 Exact duplicate events detected: 1
