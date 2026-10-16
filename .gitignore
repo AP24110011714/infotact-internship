@@ -1,15 +1,41 @@
-# Environment variables and secrets
+# Environment variables and credentials
+
 .env
 .env.*
 !.env.example
+*.json
+!package.json
 
-# Google Cloud service-account credentials
-*.key.json
-service-account*.json
-*-sa-key.json
+# Python virtual environments
 
-# Python cache
-__pycache__/
-*.py[cod]
-.venv/
 venv/
+.venv/
+env/
+
+# Python cache files
+
+**pycache**/
+*.py[cod]
+.pytest_cache/
+
+# Jupyter notebook checkpoints
+
+.ipynb_checkpoints/
+
+# Logs
+
+*.log
+
+# Generated temporary files
+
+*.tmp
+
+# IDE settings
+
+.vscode/
+.idea/
+
+# Operating system files
+
+.DS_Store
+Thumbs.db

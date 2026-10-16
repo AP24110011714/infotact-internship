@@ -1,0 +1,94 @@
+=================================================================
+CAREFLOW: CLINICAL PATHWAY PROCESS MINING
+BOTTLENECK ANALYSIS REPORT
+=================================================================
+Generated: 2026-10-16 23:01
+
+1. PATIENT VISIT DURATION
+-----------------------------------------------------------------
+Total patient visits: 500
+Average visit duration: 168.63 minutes
+Median visit duration: 167.00 minutes
+Longest visit duration: 306.00 minutes
+Shortest visit duration: 59.00 minutes
+
+2. SLOWEST ACTIVITY TRANSITIONS
+-----------------------------------------------------------------
+1. Doctor Consultation -> Doctor Consultation
+   Average: 36.05 minutes
+   Median: 37.00 minutes
+   Maximum: 59.00 minutes
+   Observed transitions: 22
+
+2. Blood Test -> Doctor Consultation
+   Average: 35.38 minutes
+   Median: 37.50 minutes
+   Maximum: 60.00 minutes
+   Observed transitions: 40
+
+3. Blood Test -> Diagnosis
+   Average: 34.40 minutes
+   Median: 36.00 minutes
+   Maximum: 60.00 minutes
+   Observed transitions: 179
+
+4. Registration -> Doctor Consultation
+   Average: 34.24 minutes
+   Median: 35.00 minutes
+   Maximum: 60.00 minutes
+   Observed transitions: 499
+
+5. X-Ray -> Doctor Consultation
+   Average: 33.74 minutes
+   Median: 36.00 minutes
+   Maximum: 54.00 minutes
+   Observed transitions: 23
+
+6. Doctor Consultation -> X-Ray
+   Average: 33.70 minutes
+   Median: 32.00 minutes
+   Maximum: 58.00 minutes
+   Observed transitions: 37
+
+7. Diagnosis -> Treatment
+   Average: 32.98 minutes
+   Median: 33.00 minutes
+   Maximum: 60.00 minutes
+   Observed transitions: 500
+
+8. Treatment -> Discharge
+   Average: 32.89 minutes
+   Median: 33.00 minutes
+   Maximum: 60.00 minutes
+   Observed transitions: 500
+
+9. X-Ray -> Diagnosis
+   Average: 32.07 minutes
+   Median: 33.00 minutes
+   Maximum: 60.00 minutes
+   Observed transitions: 122
+
+10. Doctor Consultation -> Blood Test
+   Average: 31.90 minutes
+   Median: 31.00 minutes
+   Maximum: 60.00 minutes
+   Observed transitions: 326
+
+3. MOST FREQUENT ACTIVITIES
+-----------------------------------------------------------------
+Doctor Consultation: 584 events across 499 visits
+Discharge: 500 events across 500 visits
+Diagnosis: 500 events across 500 visits
+Treatment: 500 events across 500 visits
+Registration: 499 events across 499 visits
+Blood Test: 327 events across 327 visits
+X-Ray: 145 events across 145 visits
+
+4. INTERPRETATION AND RECOMMENDATIONS
+-----------------------------------------------------------------
+• Long average transition times indicate candidate areas for review.
+• Check the median alongside the average to identify the effect of unusually long waits.
+• Review transition counts before prioritizing a bottleneck.
+• Frequent activities are not necessarily bottlenecks.
+• Validate findings with clinical workflow experts before recommending operational changes.
+• This report uses synthetic or project-provided event data; findings should not be treated as verified hospital outcomes.

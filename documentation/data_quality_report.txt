@@ -4,16 +4,16 @@ DATA QUALITY REPORT
 =======================================================
 
 Input file:
-C:\Users\bandi\Downloads\infotact-internship-git\data\raw\hospital_event_log_raw.csv
+C:\Users\bandi\Downloads\infotact-internship\data\raw\hospital_event_log_raw.csv
 
 Output file:
-C:\Users\bandi\Downloads\infotact-internship-git\data\processed\hospital_event_log_clean.csv
+C:\Users\bandi\Downloads\infotact-internship\data\processed\hospital_event_log_clean.csv
 
-Initial event records: 54500
-Final event records: 54497
+Initial event records: 3058
+Final event records: 3055
 Records removed: 3
 
-Unique patient visits remaining: 7000
+Unique patient visits remaining: 500
 
 Invalid timestamps detected: 1
 Exact duplicate events detected: 1

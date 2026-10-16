@@ -1,35 +1,55 @@
 from pathlib import Path
-
 import pandas as pd
 
 
-# --------------------------------------------------
-# STEP 1: SET UP PROJECT PATHS
-# --------------------------------------------------
+# ==========================================
+# STEP 1: SET UP FILE PATHS
+# ==========================================
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
-INPUT_FILE = (
+CLEAN_FILE = (
     PROJECT_DIR
     / "data"
     / "processed"
     / "hospital_event_log_clean.csv"
 )
 
+DOCUMENTATION_DIR = PROJECT_DIR / "documentation"
+DOCUMENTATION_DIR.mkdir(parents=True, exist_ok=True)
+
 REPORT_FILE = (
-    PROJECT_DIR
-    / "documentation"
+    DOCUMENTATION_DIR
     / "validation_report.txt"
 )
 
-REPORT_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+# ==========================================
+# STEP 2: LOAD CLEANED DATASET
+# ==========================================
+
+if not CLEAN_FILE.exists():
+    raise FileNotFoundError(
+        "Cleaned dataset not found.\n"
+        "Run this command first:\n"
+        "python scripts/clean_event_log.py"
+    )
+
+df = pd.read_csv(CLEAN_FILE)
+
+print("=" * 60)
+print("CAREFLOW - EVENT LOG VALIDATION")
+print("=" * 60)
+
+print("\nDataset loaded successfully.")
+print("Total event records:", len(df))
 
 
-# --------------------------------------------------
-# STEP 2: DEFINE VALIDATION RULES
-# --------------------------------------------------
+# ==========================================
+# STEP 3: DEFINE REQUIRED COLUMNS
+# ==========================================
 
-REQUIRED_COLUMNS = [
+required_columns = [
     "case_id",
     "activity",
     "timestamp",
@@ -37,296 +57,233 @@ REQUIRED_COLUMNS = [
     "resource"
 ]
 
-ALLOWED_ACTIVITIES = [
+missing_columns = [
+    column
+    for column in required_columns
+    if column not in df.columns
+]
+
+checks = {}
+
+checks["Required columns present"] = (
+    len(missing_columns) == 0
+)
+
+if missing_columns:
+    print("\nMissing columns:", missing_columns)
+    raise ValueError(
+        "Validation cannot continue because required columns are missing."
+    )
+
+
+# ==========================================
+# STEP 4: VALIDATE TIMESTAMPS
+# ==========================================
+
+df["timestamp"] = pd.to_datetime(
+    df["timestamp"],
+    errors="coerce"
+)
+
+checks["No invalid timestamps"] = (
+    df["timestamp"].notna().all()
+)
+
+
+# ==========================================
+# STEP 5: CHECK MISSING VALUES
+# ==========================================
+
+missing_values = int(
+    df[required_columns].isna().sum().sum()
+)
+
+checks["No missing required values"] = (
+    missing_values == 0
+)
+
+
+# ==========================================
+# STEP 6: CHECK DUPLICATE EVENTS
+# ==========================================
+
+duplicate_events = int(
+    df.duplicated(
+        subset=required_columns
+    ).sum()
+)
+
+checks["No exact duplicate events"] = (
+    duplicate_events == 0
+)
+
+
+# ==========================================
+# STEP 7: CHECK CASE IDENTIFIERS
+# ==========================================
+
+checks["Every event has a case ID"] = (
+    df["case_id"].notna().all()
+    and df["case_id"].astype(str).str.strip().ne("").all()
+)
+
+
+# ==========================================
+# STEP 8: CHECK ACTIVITY VALUES
+# ==========================================
+
+checks["Every event has an activity"] = (
+    df["activity"].notna().all()
+    and df["activity"].astype(str).str.strip().ne("").all()
+)
+
+
+# ==========================================
+# STEP 9: CHECK CHRONOLOGICAL ORDER
+# ==========================================
+
+# Sort the dataset by case ID and timestamp.
+# Then verify that timestamps never decrease within a case.
+
+ordered_df = df.sort_values(
+    ["case_id", "timestamp"]
+).copy()
+
+time_differences = (
+    ordered_df.groupby("case_id")["timestamp"]
+    .diff()
+)
+
+checks["Timestamps ordered within each case"] = (
+    time_differences.dropna().ge(pd.Timedelta(0)).all()
+)
+
+
+# ==========================================
+# STEP 10: CHECK PATIENT VISITS
+# ==========================================
+
+unique_cases = int(df["case_id"].nunique())
+
+checks["At least one patient visit exists"] = (
+    unique_cases > 0
+)
+
+events_per_case = df.groupby("case_id").size()
+
+checks["Every case has at least one event"] = (
+    len(events_per_case) > 0
+    and events_per_case.gt(0).all()
+)
+
+
+# ==========================================
+# STEP 11: CHECK HOSPITAL ACTIVITIES
+# ==========================================
+
+allowed_activities = {
     "Registration",
-    "Triage",
     "Doctor Consultation",
     "Blood Test",
     "X-Ray",
     "Diagnosis",
     "Treatment",
-    "Doctor Review",
     "Discharge"
-]
+}
+
+unexpected_activities = sorted(
+    set(df["activity"].dropna().unique())
+    - allowed_activities
+)
+
+checks["Activities belong to the allowed list"] = (
+    len(unexpected_activities) == 0
+)
 
 
-# --------------------------------------------------
-# STEP 3: LOAD THE CLEANED DATASET
-# --------------------------------------------------
-
-print("=" * 60)
-print("CAREFLOW - EVENT LOG VALIDATION")
-print("=" * 60)
-
-if not INPUT_FILE.exists():
-    raise FileNotFoundError(
-        f"Cleaned dataset not found: {INPUT_FILE}\n"
-        "Run scripts/clean_event_log.py first."
-    )
-
-df = pd.read_csv(INPUT_FILE)
-
-print("\nDataset loaded successfully.")
-print("Total event records:", len(df))
-
-
-# --------------------------------------------------
-# STEP 4: PREPARE VALIDATION RESULTS
-# --------------------------------------------------
-
-results = []
-
-
-def record_result(description, passed):
-    """Record and display an individual validation result."""
-    status = "PASS" if passed else "FAIL"
-    results.append((description, status))
-
-    print(f"{description}: {status}")
-
-
-# --------------------------------------------------
-# STEP 5: VALIDATE REQUIRED COLUMNS
-# --------------------------------------------------
+# ==========================================
+# STEP 12: DISPLAY VALIDATION RESULTS
+# ==========================================
 
 print("\nVALIDATION RESULTS")
 print("-" * 60)
 
-missing_columns = [
-    column
-    for column in REQUIRED_COLUMNS
-    if column not in df.columns
-]
+for check_name, passed in checks.items():
 
-record_result(
-    "Required columns present",
-    len(missing_columns) == 0
-)
+    status = "PASS" if passed else "FAIL"
 
-if missing_columns:
-    print("Missing columns:", missing_columns)
+    print(f"{check_name}: {status}")
 
-    # Remaining checks require the expected schema.
-    overall_pass = False
-
-else:
-
-    # --------------------------------------------------
-    # STEP 6: VALIDATE TIMESTAMPS
-    # --------------------------------------------------
-
-    timestamps = pd.to_datetime(
-        df["timestamp"],
-        errors="coerce"
-    )
-
-    record_result(
-        "No invalid timestamps",
-        timestamps.notna().all()
-    )
-
-    # --------------------------------------------------
-    # STEP 7: VALIDATE REQUIRED VALUES
-    # --------------------------------------------------
-
-    required_values_present = (
-        df[REQUIRED_COLUMNS].notna().all().all()
-        and df[REQUIRED_COLUMNS]
-        .astype(str)
-        .apply(lambda column: column.str.strip().ne(""))
-        .all()
-        .all()
-    )
-
-    record_result(
-        "No missing required values",
-        required_values_present
-    )
-
-    # --------------------------------------------------
-    # STEP 8: CHECK DUPLICATE EVENTS
-    # --------------------------------------------------
-
-    duplicate_count = int(
-        df.duplicated(subset=REQUIRED_COLUMNS).sum()
-    )
-
-    record_result(
-        "No exact duplicate events",
-        duplicate_count == 0
-    )
-
-    # --------------------------------------------------
-    # STEP 9: CHECK CASE IDs
-    # --------------------------------------------------
-
-    record_result(
-        "Every event has a case ID",
-        df["case_id"].notna().all()
-        and df["case_id"].astype(str).str.strip().ne("").all()
-    )
-
-    # --------------------------------------------------
-    # STEP 10: CHECK ACTIVITY VALUES
-    # --------------------------------------------------
-
-    record_result(
-        "Every event has an activity",
-        df["activity"].notna().all()
-        and df["activity"].astype(str).str.strip().ne("").all()
-    )
-
-    # --------------------------------------------------
-    # STEP 11: CHECK TIMESTAMP ORDER WITHIN EACH CASE
-    # --------------------------------------------------
-
-    timestamp_order_pass = False
-
-    if timestamps.notna().all():
-        checked_df = df[["case_id"]].copy()
-        checked_df["timestamp"] = timestamps
-
-        ordered_df = checked_df.sort_values(
-            ["case_id", "timestamp"],
-            kind="stable"
-        )
-
-        # Compare the original sequence with chronological order.
-        timestamp_order_pass = (
-            ordered_df.index.to_list()
-            == checked_df.index.to_list()
-        )
-
-    record_result(
-        "Timestamps ordered within each case",
-        timestamp_order_pass
-    )
-
-    # --------------------------------------------------
-    # STEP 12: CHECK THAT PATIENT VISITS EXIST
-    # --------------------------------------------------
-
-    record_result(
-        "At least one patient visit exists",
-        df["case_id"].nunique() > 0
-    )
-
-    # --------------------------------------------------
-    # STEP 13: CHECK EVERY CASE HAS AN EVENT
-    # --------------------------------------------------
-
-    record_result(
-        "Every case has at least one event",
-        not df.empty
-        and df.groupby("case_id").size().gt(0).all()
-    )
-
-    # --------------------------------------------------
-    # STEP 14: CHECK ALLOWED ACTIVITIES
-    # --------------------------------------------------
-
-    unexpected_activities = sorted(
-        set(df["activity"].dropna().unique())
-        - set(ALLOWED_ACTIVITIES)
-    )
-
-    record_result(
-        "Activities belong to the allowed list",
-        len(unexpected_activities) == 0
-    )
-
-    if unexpected_activities:
-        print("Unexpected activities:", unexpected_activities)
-
-    # --------------------------------------------------
-    # STEP 15: DETERMINE OVERALL STATUS
-    # --------------------------------------------------
-
-    overall_pass = all(
-        status == "PASS"
-        for _, status in results
-    )
-
-
-# --------------------------------------------------
-# STEP 16: DISPLAY DATASET SUMMARY
-# --------------------------------------------------
 
 print("\nDATASET SUMMARY")
 print("-" * 60)
 
 print("Total event records:", len(df))
-print("Unique patient visits:", df["case_id"].nunique())
+print("Unique patient visits:", unique_cases)
+print("Missing required values:", missing_values)
+print("Duplicate events:", duplicate_events)
+print("Invalid timestamps:", int(df["timestamp"].isna().sum()))
 
-if all(column in df.columns for column in REQUIRED_COLUMNS):
-    print(
-        "Missing required values:",
-        int(df[REQUIRED_COLUMNS].isna().any(axis=1).sum())
-    )
-
-    print(
-        "Duplicate events:",
-        int(df.duplicated(subset=REQUIRED_COLUMNS).sum())
-    )
-
-    parsed_timestamps = pd.to_datetime(
-        df["timestamp"],
-        errors="coerce"
-    )
-
-    print(
-        "Invalid timestamps:",
-        int(parsed_timestamps.isna().sum())
-    )
-
-    unexpected_activities = sorted(
-        set(df["activity"].dropna().unique())
-        - set(ALLOWED_ACTIVITIES)
-    )
-
+if unexpected_activities:
     print("Unexpected activities:", unexpected_activities)
 
 
-# --------------------------------------------------
-# STEP 17: SAVE VALIDATION REPORT
-# --------------------------------------------------
+# ==========================================
+# STEP 13: SAVE VALIDATION REPORT
+# ==========================================
+
+overall_status = (
+    "PASS" if all(checks.values()) else "FAIL"
+)
 
 report_lines = [
-    "CAREFLOW - EVENT LOG VALIDATION REPORT",
+    "CAREFLOW: CLINICAL PATHWAY PROCESS MINING",
+    "EVENT LOG VALIDATION REPORT",
     "=" * 60,
-    f"Input dataset: {INPUT_FILE}",
-    f"Total event records: {len(df)}",
-    f"Unique patient visits: {df['case_id'].nunique()}",
     "",
-    "VALIDATION RESULTS",
+    f"Dataset: {CLEAN_FILE.name}",
+    f"Total event records: {len(df)}",
+    f"Unique patient visits: {unique_cases}",
+    f"Missing required values: {missing_values}",
+    f"Duplicate events: {duplicate_events}",
+    f"Invalid timestamps: {int(df['timestamp'].isna().sum())}",
+    "",
+    "VALIDATION CHECKS",
     "-" * 60
 ]
 
-for description, status in results:
-    report_lines.append(f"{description}: {status}")
+for check_name, passed in checks.items():
+
+    status = "PASS" if passed else "FAIL"
+
+    report_lines.append(
+        f"{check_name}: {status}"
+    )
 
 report_lines.extend([
     "",
-    "=" * 60,
-    "OVERALL VALIDATION STATUS: "
-    + ("PASS" if overall_pass else "FAIL"),
-    "=" * 60
+    f"OVERALL VALIDATION STATUS: {overall_status}",
+    ""
 ])
 
 REPORT_FILE.write_text(
-    "\n".join(report_lines) + "\n",
+    "\n".join(report_lines),
     encoding="utf-8"
 )
 
+
+# ==========================================
+# STEP 14: FINAL RESULT
+# ==========================================
+
 print("\n" + "=" * 60)
-print(
-    "OVERALL VALIDATION STATUS:",
-    "PASS" if overall_pass else "FAIL"
-)
+print("OVERALL VALIDATION STATUS:", overall_status)
 print("=" * 60)
 
 print("\nValidation report saved to:")
 print(REPORT_FILE)
 
-if not overall_pass:
+if overall_status == "PASS":
+    print("\nSUCCESS: The dataset passed all implemented checks.")
+else:
     print("\nACTION REQUIRED: Review the failed validation checks.")

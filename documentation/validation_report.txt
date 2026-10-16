@@ -1,10 +1,15 @@
-CAREFLOW - EVENT LOG VALIDATION REPORT
+CAREFLOW: CLINICAL PATHWAY PROCESS MINING
+EVENT LOG VALIDATION REPORT
 ============================================================
-Input dataset: C:\Users\bandi\Downloads\infotact-internship-git\data\processed\hospital_event_log_clean.csv
-Total event records: 54497
-Unique patient visits: 7000
 
-VALIDATION RESULTS
+Dataset: hospital_event_log_clean.csv
+Total event records: 3055
+Unique patient visits: 500
+Missing required values: 0
+Duplicate events: 0
+Invalid timestamps: 0
+
+VALIDATION CHECKS
 ------------------------------------------------------------
 Required columns present: PASS
 No invalid timestamps: PASS
@@ -17,6 +22,4 @@ At least one patient visit exists: PASS
 Every case has at least one event: PASS
 Activities belong to the allowed list: PASS
 
-============================================================
 OVERALL VALIDATION STATUS: PASS
-============================================================
