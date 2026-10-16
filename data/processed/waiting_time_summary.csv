@@ -1,0 +1,9 @@
+current_activity,event_count,average_waiting_minutes,median_waiting_minutes,maximum_waiting_minutes
+Doctor Consultation,7000,47.982571428571426,48.0,90.0
+Treatment,7000,47.950714285714284,48.0,90.0
+Doctor Review,4065,47.86789667896679,48.0,90.0
+Diagnosis,7000,47.489,48.0,90.0
+Triage,8130,47.42755227552276,47.0,90.0
+Registration,6999,47.30847263894842,47.0,90.0
+X-Ray,2794,47.24946313528991,47.0,90.0
+Blood Test,4509,47.11776447105788,47.0,90.0

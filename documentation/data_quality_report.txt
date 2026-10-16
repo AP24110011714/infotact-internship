@@ -1,0 +1,41 @@
+
+CAREFLOW: CLINICAL PATHWAY PROCESS MINING
+DATA QUALITY REPORT
+=======================================================
+
+Input file:
+C:\Users\bandi\Downloads\infotact-internship-git\data\raw\hospital_event_log_raw.csv
+
+Output file:
+C:\Users\bandi\Downloads\infotact-internship-git\data\processed\hospital_event_log_clean.csv
+
+Initial event records: 54500
+Final event records: 54497
+Records removed: 3
+
+Unique patient visits remaining: 7000
+
+Invalid timestamps detected: 1
+Exact duplicate events detected: 1
+
+Missing values before cleaning: 2
+Missing values after cleaning: 0
+
+Cleaning operations:
+1. Standardized text fields.
+2. Converted timestamps into datetime values.
+3. Removed exact duplicate event records.
+4. Removed records with missing required fields.
+5. Sorted events by case ID and timestamp.
+
+Final checks:
+No missing values: True
+No duplicate events: True
+All timestamps valid: True
+Required columns present: True
+
+Note:
+Records with missing required fields or invalid timestamps
+were removed rather than assigned invented values.
+
+=======================================================

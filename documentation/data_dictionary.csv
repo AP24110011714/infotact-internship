@@ -1,0 +1,6 @@
+column_name,data_type,description,example
+case_id,String,Unique identifier for a patient visit,P0001
+activity,String,Hospital activity performed,Registration
+timestamp,Datetime,Date and time of the event,2026-10-02 14:24:00
+department,String,Department where the activity occurred,Reception
+resource,String,Staff member or resource performing the activity,Staff_01

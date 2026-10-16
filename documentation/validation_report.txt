@@ -1,0 +1,22 @@
+CAREFLOW - EVENT LOG VALIDATION REPORT
+============================================================
+Input dataset: C:\Users\bandi\Downloads\infotact-internship-git\data\processed\hospital_event_log_clean.csv
+Total event records: 54497
+Unique patient visits: 7000
+
+VALIDATION RESULTS
+------------------------------------------------------------
+Required columns present: PASS
+No invalid timestamps: PASS
+No missing required values: PASS
+No exact duplicate events: PASS
+Every event has a case ID: PASS
+Every event has an activity: PASS
+Timestamps ordered within each case: PASS
+At least one patient visit exists: PASS
+Every case has at least one event: PASS
+Activities belong to the allowed list: PASS
+
+============================================================
+OVERALL VALIDATION STATUS: PASS
+============================================================
