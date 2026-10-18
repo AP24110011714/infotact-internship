@@ -1,0 +1,13 @@
+from_activity,to_activity,transition_count,patient_visits,average_wait_minutes,median_wait_minutes,maximum_wait_minutes
+Doctor Consultation,Doctor Consultation,22,22,36.04545454545455,37.0,59.0
+Blood Test,Doctor Consultation,40,40,35.375,37.5,60.0
+Blood Test,Diagnosis,179,179,34.39664804469274,36.0,60.0
+Registration,Doctor Consultation,499,499,34.24048096192385,35.0,60.0
+X-Ray,Doctor Consultation,23,23,33.73913043478261,36.0,54.0
+Doctor Consultation,X-Ray,37,37,33.7027027027027,32.0,58.0
+Diagnosis,Treatment,500,500,32.98,33.0,60.0
+Treatment,Discharge,500,500,32.892,33.0,60.0
+X-Ray,Diagnosis,122,122,32.07377049180328,33.0,60.0
+Doctor Consultation,Blood Test,326,326,31.89877300613497,31.0,60.0
+Doctor Consultation,Diagnosis,199,199,31.517587939698494,32.0,60.0
+Blood Test,X-Ray,108,108,30.73148148148148,31.0,59.0

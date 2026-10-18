@@ -1,0 +1,6 @@
+column_name,data_type,description,example
+case_id,String,Unique identifier for a synthetic patient visit,P0001
+activity,String,Hospital activity performed during the patient visit,Registration
+timestamp,Datetime,Date and time when the hospital activity occurred,2026-10-02 14:24:00
+department,String,Hospital department associated with the activity,Reception
+resource,String,Synthetic staff member or resource associated with the activity,Staff_01

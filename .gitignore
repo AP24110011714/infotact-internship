@@ -1,0 +1,41 @@
+# Environment variables and credentials
+
+.env
+.env.*
+!.env.example
+*.json
+!package.json
+
+# Python virtual environments
+
+venv/
+.venv/
+env/
+
+# Python cache files
+
+**pycache**/
+*.py[cod]
+.pytest_cache/
+
+# Jupyter notebook checkpoints
+
+.ipynb_checkpoints/
+
+# Logs
+
+*.log
+
+# Generated temporary files
+
+*.tmp
+
+# IDE settings
+
+.vscode/
+.idea/
+
+# Operating system files
+
+.DS_Store
+Thumbs.db
