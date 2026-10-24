@@ -131,4 +131,7 @@ Long waits and repeated activities are signals to examine, not proof of poor cli
 
 ## Author
 
-Keep your existing Author section here.
+## Authors
+
+- **Sravana Bandi**, GitHub: [AP24110011714](https://github.com/AP24110011714)
+- **Abhinandan Naik**, GitHub: [abhi07-sr](https://github.com/abhi07-sr)
