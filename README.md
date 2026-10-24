@@ -2,243 +2,133 @@
 
 **An Internship Project at Infotact Solutions | Data Analytics**
 
-## 📌 Project Overview
+## Project Overview
 
-CareFlow is a data analytics and process mining project designed to analyze clinical workflows and patient-care pathways in hospital emergency departments (ERs).
+CareFlow is a process mining project that analyzes patient-care pathways in a hospital using an event log. It cleans the data, discovers the most common pathways, measures how long cases and individual steps take, and flags repeated activities that may point to workflow inefficiencies. Results are shown in a Streamlit dashboard.
 
-The project uses hospital event logs to understand the sequence of activities involved in patient visits, measure waiting times, identify process bottlenecks, and detect repeated activities that may indicate workflow inefficiencies.
+## Objectives
 
-The goal is to transform event data into meaningful insights that can help healthcare teams understand clinical processes and identify opportunities to improve operational efficiency.
+- Clean, preprocess, and validate the hospital event log.
+- Discover common clinical pathways (process variants).
+- Calculate total case duration and the waiting time between activities.
+- Identify transitions with long delays (potential bottlenecks).
+- Detect repeated activities and process loops.
+- Present the results in an interactive dashboard.
 
-## 🎯 Objectives
+## Technologies Used
 
-* Analyze patient-care pathways using event log data.
-* Clean, preprocess, and validate hospital workflow data.
-* Calculate patient waiting times and total visit durations.
-* Identify bottlenecks and delays between clinical activities.
-* Detect repeated activities and process loops.
-* Discover common clinical pathways using process mining techniques.
-* Develop an interactive dashboard to visualize analytical results.
-* Generate reports and actionable insights from the analysis.
+| Technology | Purpose |
+| --- | --- |
+| Python | Data processing and analysis |
+| Pandas | Data cleaning and manipulation |
+| PM4Py | Process mining (directly-follows graph) |
+| Streamlit | Interactive dashboard |
+| Git and GitHub | Version control |
 
-## 🛠️ Technologies Used
+## Dataset
 
-| Technology          | Purpose                                |
-| ------------------- | -------------------------------------- |
-| Python              | Data processing and analysis           |
-| Pandas              | Data cleaning and manipulation         |
-| NumPy               | Numerical computations                 |
-| PM4Py               | Process mining and process discovery   |
-| SQLite              | Local data storage, if required        |
-| Streamlit           | Interactive dashboard development      |
-| Matplotlib / Plotly | Data visualization                     |
-| Git and GitHub      | Version control and project management |
+The project uses the **Sepsis Cases event log**, a public, de-identified hospital event log. Each case is one patient's pathway, and each row is one recorded activity.
 
-*The technology stack may be adjusted based on project requirements and implementation progress.*
+The cleaned log in `data/processed/` uses these core fields:
 
-## 📂 Project Structure
+| Column | Description |
+| --- | --- |
+| `case_id` | Unique identifier for a patient case |
+| `activity` | Clinical or administrative activity |
+| `timestamp` | Date and time the activity occurred |
 
-```text
-careflow-clinical-process-mining/
-│
+> Check the exact column names in your cleaned file and update this table if they differ.
+
+**Data privacy:** The dataset is public and de-identified. No personally identifiable patient information is included in this repository.
+
+## Project Structure
+
+```
+infotact-internship/
 ├── data/
-│   ├── raw/                   # Original event log data
-│   └── processed/             # Cleaned and processed data
-│
-├── notebooks/
-│   └── exploratory_analysis.ipynb
-│
-├── src/
-│   ├── generate_data.py       # Generate synthetic event data
-│   ├── clean_data.py          # Clean and validate event logs
-│   ├── analyze_process.py     # Process discovery and pathway analysis
-│   └── bottleneck_analysis.py # Waiting-time and bottleneck analysis
-│
+│   └── processed/                 # Cleaned data and analysis outputs (CSV)
 ├── dashboard/
-│   └── app.py                 # Streamlit dashboard
-│
-├── reports/                   # Project reports and findings
-│
-├── tests/                     # Project tests
-│
-├── requirements.txt           # Python dependencies
-├── README.md
-└── .gitignore
+│   └── app.py                     # Streamlit dashboard
+├── docs/
+│   └── findings.md                # Key findings generated from the results
+├── Sepsis_Dataset ....xlsx        # Original dataset
+├── data_cleaning.py               # Clean and validate the event log
+├── variants_analysis.py           # Most common patient pathways
+├── main.py                        # Directly-follows graph with PM4Py
+├── case_duration.py               # Total duration of each case
+├── Waiting_time.py                # Waiting time between activities
+├── rework_analysis.py             # Repeated activities and loops
+├── export_findings.py             # Generate docs/findings.md
+├── Member1_Data_Collection_and_Data_Cleaning_Report.md
+├── requirements.txt
+└── README.md
 ```
 
-*This is the proposed project structure. Files and folders will be added as development progresses.*
+## Installation and Setup
 
-## 📊 Dataset Description
-
-CareFlow works with event log data that records the activities associated with each patient visit.
-
-The dataset can contain the following fields:
-
-| Column      | Description                                                            |
-| ----------- | ---------------------------------------------------------------------- |
-| `case_id`   | Unique identifier for a patient visit                                  |
-| `activity`  | Clinical or administrative activity                                    |
-| `timestamp` | Date and time when an activity occurred                                |
-| `resource`  | Department or staff category associated with an activity, if available |
-
-### Example Event Log
-
-| case_id | activity            | timestamp           |
-| ------- | ------------------- | ------------------- |
-| CASE001 | Registration        | 2026-10-10 09:00:00 |
-| CASE001 | Triage              | 2026-10-10 09:10:00 |
-| CASE001 | Doctor Consultation | 2026-10-10 09:30:00 |
-| CASE001 | Laboratory Test     | 2026-10-10 09:45:00 |
-| CASE001 | Doctor Consultation | 2026-10-10 10:15:00 |
-| CASE001 | Discharge           | 2026-10-10 10:30:00 |
-
-This example illustrates a possible patient pathway. The repeated consultation activity can be examined to understand the sequence of care, but repetition alone does not establish that a clinical process is inefficient.
-
-**Data privacy:** Development and testing will use synthetic data or properly authorized, de-identified data. Personally identifiable patient information will not be included in the public repository.
-
-## 🔍 Key Analytical Features
-
-### 1. Data Preprocessing
-
-* Handle missing values and duplicate records.
-* Standardize activity names and timestamps.
-* Validate event sequences.
-* Organize records by case identifier and timestamp.
-
-### 2. Clinical Pathway Analysis
-
-* Identify common sequences of clinical activities.
-* Compare pathways across patient visits.
-* Examine repeated activities and process loops.
-
-### 3. Waiting-Time Analysis
-
-* Calculate time differences between consecutive activities.
-* Estimate total visit duration.
-* Identify transitions with comparatively long delays.
-
-### 4. Process Mining
-
-* Discover process models from event logs.
-* Visualize activity transitions.
-* Explore deviations from a defined reference pathway, when one is available.
-
-### 5. Interactive Dashboard
-
-The planned dashboard may include:
-
-* Total patient visits.
-* Average and median waiting times.
-* Average total visit duration.
-* Most frequent clinical pathways.
-* Activity-transition analysis.
-* Repeated-activity and process-loop analysis.
-* Potential bottlenecks and workflow deviations.
-
-The dashboard features will be implemented and documented as development progresses.
-
-## 🚀 Implementation Plan
-
-| Phase   | Activities                                                                 |
-| ------- | -------------------------------------------------------------------------- |
-| Phase 1 | Repository setup, synthetic data generation, and exploratory data analysis |
-| Phase 2 | Data cleaning, validation, and event log preparation                       |
-| Phase 3 | Process discovery, pathway analysis, and waiting-time calculations         |
-| Phase 4 | Bottleneck analysis and dashboard development                              |
-| Phase 5 | Testing, documentation, final report, and project presentation             |
-
-## ⚙️ Installation and Setup
-
-### Prerequisites
-
-* Python 3.10 or a compatible version supported by the selected dependencies
-* Git
-* A code editor such as Visual Studio Code
-
-### Step 1: Clone the Repository
+**Prerequisites:** Python 3.10 or newer, and Git.
 
 ```bash
-git clone https://github.com/AP24110011714/careflow-clinical-process-mining.git
-```
-
-### Step 2: Open the Project Directory
-
-```bash
-cd careflow-clinical-process-mining
-```
-
-### Step 3: Create a Virtual Environment
-
-**Windows:**
-
-```bash
+git clone https://github.com/AP24110011714/infotact-internship.git
+cd infotact-internship
 python -m venv venv
-venv\Scripts\activate
-```
-
-### Step 4: Install Dependencies
-
-Once `requirements.txt` has been created and populated:
-
-```bash
+venv\Scripts\activate          # Windows
 pip install -r requirements.txt
 ```
 
-### Step 5: Run the Application
+## How to Run
 
-After the Streamlit dashboard has been implemented:
+Run the scripts from the repository's main folder, in this order:
 
-```bash
-streamlit run dashboard/app.py
-```
+| Step | Command | What it does |
+| --- | --- | --- |
+| 1 | `python data_cleaning.py` | Cleans the dataset and saves it to `data/processed/` |
+| 2 | `python variants_analysis.py` | Finds the most common pathways |
+| 3 | `python main.py` | Builds the directly-follows graph |
+| 4 | `python case_duration.py` | Calculates the duration of each case |
+| 5 | `python Waiting_time.py` | Calculates waiting time between activities |
+| 6 | `python rework_analysis.py` | Detects repeated activities |
+| 7 | `python export_findings.py` | Writes `docs/findings.md` |
+| 8 | `streamlit run dashboard/app.py` | Opens the dashboard |
 
-*These are the planned setup instructions. The commands will be fully usable once the corresponding repository files and dependencies are in place.*
+Each script saves its results as CSV files in `data/processed/`. Check the script's code for the exact output file names.
 
-## 📈 Expected Outcomes
+## Analysis Overview
 
-The project aims to produce:
+1. **Data cleaning:** handles duplicates, missing values, and timestamp formats, and orders events by case and time.
+2. **Process variants:** groups each case's activity sequence and counts how often each pathway occurs.
+3. **Directly-follows graph:** shows which activity directly follows which, and how often.
+4. **Case duration:** time from the first to the last event of each case.
+5. **Waiting times:** time between consecutive activities, summarized per transition (mean, median, 90th percentile).
+6. **Rework detection:** finds activities that occur more than once in a case.
 
-* A clean and validated clinical event log.
-* An analysis of common patient-care pathways.
-* Waiting-time and visit-duration statistics.
-* Identification of potential workflow bottlenecks.
-* Visual representations of discovered processes.
-* An interactive dashboard for exploring analytical results.
-* Technical documentation, a final report, and a project presentation.
+Key numbers from the analysis are written to `docs/findings.md`.
 
-The findings will depend on the quality of the data and the analyses performed. Identified delays or deviations will require appropriate interpretation rather than being treated automatically as evidence of poor clinical care.
+## Dashboard
 
-## 🎓 Internship Information
+The Streamlit dashboard (`dashboard/app.py`) shows KPI cards (total cases, median duration, number of variants, share of cases with rework) and tables of the longest cases and slowest transitions. More charts are being added.
 
-* **Organization:** Infotact Solutions
-* **Role:** Data Associate L1 Intern
-* **Domain:** Data Analytics
-* **Project Title:** CareFlow: Clinical Pathway Process Mining
-* **Project Start Date:** 10 October 2026
+## Project Status
 
-## 🔮 Future Enhancements
+| Phase | Status |
+| --- | --- |
+| Data collection and cleaning | Done |
+| Pathway, duration, waiting-time and rework analysis | Done |
+| Dashboard skeleton | Done |
+| Dashboard charts and filters | In progress |
+| Final report and presentation | Planned |
 
-* Integrate additional authorized healthcare event datasets.
-* Add interactive process maps and pathway comparisons.
-* Implement conformance checking against a defined reference process.
-* Add configurable filters for activities and visit durations.
-* Improve dashboard usability and reporting.
-* Explore additional process performance indicators.
+## Notes
 
-## 👩‍💻 Author
+Long waits and repeated activities are signals to examine, not proof of poor clinical care. This project is for educational and analytics purposes and does not provide medical advice.
 
-**Sravana Bandi**
+## Internship Information
 
-B.Tech Computer Science and Engineering Student
-SRM University–AP
+- **Organization:** Infotact Solutions
+- **Domain:** Data Analytics
+- **Project:** CareFlow: Clinical Pathway Process Mining
+- **Project start date:** 10 October 2026
 
-GitHub: [AP24110011714](https://github.com/AP24110011714)
+## Author
 
-## 📄 Disclaimer
-
-This project is developed for educational and data analytics purposes as part of an internship project. It is intended to analyze operational workflows and does not provide medical diagnoses or treatment recommendations.
-
----
-
-**Project Status:** In Development
-**Last Updated:** October 2026
+Keep your existing Author section here.
