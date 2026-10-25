@@ -33,3 +33,16 @@ st.dataframe(dur.sort_values("duration_hours", ascending=False).head(10),
 
 st.subheader("Slowest transitions")
 st.dataframe(wait.head(10), use_container_width=True)
+
+st.subheader("Most common patient pathways (variants)")
+
+top_n = st.slider("Number of variants to show", 3, 15, 10)
+top = var.head(top_n).copy()
+top["label"] = [f"V{i + 1}" for i in range(len(top))]
+
+st.bar_chart(top.set_index("label")["cases"])
+
+st.caption("Each bar is one pathway. V1 is the most common. "
+           "Full sequences are listed below.")
+st.dataframe(top[["label", "variant", "cases", "percent"]],
+             use_container_width=True)
