@@ -46,3 +46,8 @@ st.caption("Each bar is one pathway. V1 is the most common. "
            "Full sequences are listed below.")
 st.dataframe(top[["label", "variant", "cases", "percent"]],
              use_container_width=True)
+
+q = X_scaled['Insulin'].quantile(.95)
+mask = X_scaled['Insulin'] < q
+dataNew = X_scaled[mask]
+y_outlier_detection = y_outlier_detection[mask]
