@@ -51,3 +51,21 @@ q = X_scaled['Insulin'].quantile(.95)
 mask = X_scaled['Insulin'] < q
 dataNew = X_scaled[mask]
 y_outlier_detection = y_outlier_detection[mask]
+
+# ---- Sidebar filters ----
+st.sidebar.header("Filters")
+
+max_h = float(dur["duration_hours"].max())
+hours = st.sidebar.slider("Case duration (hours)", 0.0, max_h, (0.0, max_h))
+dur = dur[dur["duration_hours"].between(hours[0], hours[1])]
+rep = rep[rep.iloc[:, 0].isin(dur.iloc[:, 0])]
+
+acts = sorted(set(wait["from"]).union(wait["to"]))
+chosen = st.sidebar.multiselect("Show transitions involving these activities", acts)
+if chosen:
+    wait = wait[wait["from"].isin(chosen) | wait["to"].isin(chosen)]
+
+if dur.empty:
+    st.warning("No cases match the selected filters.")
+    st.stop()
+    
