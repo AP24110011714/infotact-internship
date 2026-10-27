@@ -12,6 +12,10 @@ Exports:
     3. Combined careflow_summary table to BigQuery
 
 Configuration is loaded from the project's .env file.
+
+The expected source-table columns are documented in
+EXPECTED_COLUMNS. These should be checked against the
+actual Member 2 dbt models before final integration.
 """
 
 import logging
@@ -58,6 +62,44 @@ SQL_KPI_SUMMARY = """
 SELECT *
 FROM `{project_id}.{dataset_id}.kpi_summary`
 """
+
+
+# =========================================================
+# 2A. Expected source-table columns
+# =========================================================
+#
+# IMPORTANT:
+# These are the columns currently assumed by the
+# Member 1 export contract.
+#
+# They must be checked against Member 2's actual dbt
+# models before the final integration.
+#
+# The exporter will warn about missing columns but will
+# continue processing the available data.
+# =========================================================
+
+EXPECTED_COLUMNS = {
+    TRANSITION_TABLE: [
+        "from_activity",
+        "to_activity",
+        "transition_count",
+        "avg_wait_minutes",
+    ],
+    LOOPBACK_TABLE: [
+        "case_id",
+        "from_activity",
+        "to_activity",
+        "loop_count",
+    ],
+    KPI_TABLE: [
+        "total_cases",
+        "total_events",
+        "avg_case_duration_minutes",
+        "avg_wait_minutes",
+        "loopback_rate",
+    ],
+}
 
 
 # =========================================================
@@ -165,6 +207,66 @@ def table_exists(
 
 
 # =========================================================
+# 5A. Validate source-table columns
+# =========================================================
+
+def validate_columns(
+    dataframe: pd.DataFrame,
+    table_name: str,
+) -> bool:
+    """
+    Check whether the source table contains the expected columns.
+
+    Missing columns generate a warning but do not stop the export.
+    """
+
+    expected = EXPECTED_COLUMNS.get(
+        table_name,
+        [],
+    )
+
+    if not expected:
+        logger.warning(
+            "No expected column definition found for '%s'.",
+            table_name,
+        )
+
+        return True
+
+    actual_columns = list(
+        dataframe.columns
+    )
+
+    logger.info(
+        "Columns found in %s: %s",
+        table_name,
+        actual_columns,
+    )
+
+    missing_columns = [
+        column
+        for column in expected
+        if column not in actual_columns
+    ]
+
+    if missing_columns:
+        logger.warning(
+            "Source table '%s' is missing expected columns: %s",
+            table_name,
+            missing_columns,
+        )
+
+        return False
+
+    logger.info(
+        "Column validation passed for '%s'.",
+        table_name,
+    )
+
+    return True
+
+
+# =========================================================
 # 6. Read source table
 # =========================================================
 
@@ -179,8 +281,8 @@ def read_source_table(
     Read a source mart table from BigQuery.
 
     Returns:
-        DataFrame when the table exists.
-        None when the table is missing.
+        DataFrame when the table exists and can be read.
+        None when the table is missing or cannot be read.
     """
 
     logger.info(
@@ -230,6 +332,11 @@ def read_source_table(
         "Rows loaded from %s: %s",
         table_name,
         f"{len(dataframe):,}",
+    )
+
+    validate_columns(
+        dataframe,
+        table_name,
     )
 
     return dataframe
@@ -351,6 +458,39 @@ def write_summary_to_bigquery(
         table_id,
     )
 
+    rows_before = 0
+
+    try:
+        existing_table = client.get_table(
+            table_id
+        )
+
+        query = f"""
+        SELECT COUNT(*) AS row_count
+        FROM `{table_id}`
+        """
+
+        result = next(
+            iter(
+                client.query(query).result()
+            )
+        )
+
+        rows_before = int(
+            result["row_count"]
+        )
+
+        logger.info(
+            "Rows already in careflow_summary: %s",
+            f"{rows_before:,}",
+        )
+
+    except NotFound:
+        logger.info(
+            "careflow_summary does not exist yet. "
+            "It will be created."
+        )
+
     job_config = bigquery.LoadJobConfig(
         write_disposition=(
             bigquery.WriteDisposition.WRITE_TRUNCATE
@@ -370,9 +510,37 @@ def write_summary_to_bigquery(
         load_job.job_id,
     )
 
+    rows_after = 0
+
+    query = f"""
+    SELECT COUNT(*) AS row_count
+    FROM `{table_id}`
+    """
+
+    result = next(
+        iter(
+            client.query(query).result()
+        )
+    )
+
+    rows_after = int(
+        result["row_count"]
+    )
+
     logger.info(
         "Rows written to careflow_summary: %s",
-        f"{len(dataframe):,}",
+        f"{rows_after:,}",
+    )
+
+    if rows_after != len(dataframe):
+        raise RuntimeError(
+            "careflow_summary row-count verification failed. "
+            f"Expected {len(dataframe):,}, "
+            f"found {rows_after:,}."
+        )
+
+    logger.info(
+        "SUCCESS: careflow_summary row count verified."
     )
 
 
