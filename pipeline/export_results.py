@@ -1,21 +1,20 @@
+
 """
-CareFlow Results Exporter
+CareFlow Task 4: Export BigQuery mart results.
 
-Reads the dbt mart tables from BigQuery:
-    - transition_times
-    - loopbacks
-    - kpi_summary
+Reads:
+    transition_times
+    loopbacks
+    kpi_summary
 
-Exports:
-    1. Individual CSV copies to outputs/
-    2. Combined careflow_summary CSV to outputs/
-    3. Combined careflow_summary table to BigQuery
+Creates:
+    outputs/transition_times.csv
+    outputs/loopbacks.csv
+    outputs/kpi_summary.csv
+    outputs/careflow_summary.csv
+    BigQuery table: careflow_summary
 
 Configuration is loaded from the project's .env file.
-
-The expected source-table columns are documented in
-EXPECTED_COLUMNS. These should be checked against the
-actual Member 2 dbt models before final integration.
 """
 
 import logging
@@ -25,86 +24,68 @@ from pathlib import Path
 
 import pandas as pd
 from dotenv import load_dotenv
-from google.api_core.exceptions import NotFound
+from google.api_core.exceptions import (
+    BadRequest,
+    Forbidden,
+    GoogleAPIError,
+    NotFound,
+)
 from google.cloud import bigquery
 
 
-# =========================================================
-# 1. Project paths and configuration
-# =========================================================
+# ============================================================
+# 1. PROJECT PATHS AND CONFIGURATION
+# ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_FILE = PROJECT_ROOT / ".env"
-
 OUTPUT_DIR = PROJECT_ROOT / "outputs"
 
-TRANSITION_TABLE = "transition_times"
-LOOPBACK_TABLE = "loopbacks"
-KPI_TABLE = "kpi_summary"
+load_dotenv(ENV_FILE, override=True)
+
+BQ_PROJECT = os.getenv("BQ_PROJECT", "").strip()
+BQ_DATASET = os.getenv("BQ_DATASET", "").strip()
+BQ_LOCATION = os.getenv("BQ_LOCATION", "US").strip() or "US"
+
+SOURCE_TABLES = (
+    "transition_times",
+    "loopbacks",
+    "kpi_summary",
+)
+
 SUMMARY_TABLE = "careflow_summary"
 
 
-# =========================================================
-# 2. SQL constants
-# =========================================================
+# ============================================================
+# 2. SQL CONSTANTS
+# Keep all BigQuery SQL statements in this section.
+# ============================================================
 
-SQL_TRANSITION_TIMES = """
+TRANSITION_TIMES_SQL = """
 SELECT *
-FROM `{project_id}.{dataset_id}.transition_times`
+FROM `{project}.{dataset}.transition_times`
 """
 
-SQL_LOOPBACKS = """
+LOOPBACKS_SQL = """
 SELECT *
-FROM `{project_id}.{dataset_id}.loopbacks`
+FROM `{project}.{dataset}.loopbacks`
 """
 
-SQL_KPI_SUMMARY = """
+KPI_SUMMARY_SQL = """
 SELECT *
-FROM `{project_id}.{dataset_id}.kpi_summary`
+FROM `{project}.{dataset}.kpi_summary`
 """
 
-
-# =========================================================
-# 2A. Expected source-table columns
-# =========================================================
-#
-# IMPORTANT:
-# These are the columns currently assumed by the
-# Member 1 export contract.
-#
-# They must be checked against Member 2's actual dbt
-# models before the final integration.
-#
-# The exporter will warn about missing columns but will
-# continue processing the available data.
-# =========================================================
-
-EXPECTED_COLUMNS = {
-    TRANSITION_TABLE: [
-        "from_activity",
-        "to_activity",
-        "transition_count",
-        "avg_wait_minutes",
-    ],
-    LOOPBACK_TABLE: [
-        "case_id",
-        "from_activity",
-        "to_activity",
-        "loop_count",
-    ],
-    KPI_TABLE: [
-        "total_cases",
-        "total_events",
-        "avg_case_duration_minutes",
-        "avg_wait_minutes",
-        "loopback_rate",
-    ],
+SQL_BY_TABLE = {
+    "transition_times": TRANSITION_TIMES_SQL,
+    "loopbacks": LOOPBACKS_SQL,
+    "kpi_summary": KPI_SUMMARY_SQL,
 }
 
 
-# =========================================================
-# 3. Logging configuration
-# =========================================================
+# ============================================================
+# 3. LOGGING
+# ============================================================
 
 logging.basicConfig(
     level=logging.INFO,
@@ -112,441 +93,296 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("careflow_export")
 
 
-# =========================================================
-# 4. BigQuery client
-# =========================================================
+# ============================================================
+# 4. BIGQUERY CLIENT
+# ============================================================
 
 def create_bigquery_client():
-    """Create a BigQuery client using the existing .env configuration."""
+    """Create an authenticated BigQuery client using .env settings."""
 
-    load_dotenv(ENV_FILE)
+    if not ENV_FILE.exists():
+        raise FileNotFoundError(
+            f".env file was not found: {ENV_FILE}"
+        )
+
+    if not BQ_PROJECT:
+        raise ValueError(
+            "BQ_PROJECT is missing from the .env file."
+        )
+
+    if not BQ_DATASET:
+        raise ValueError(
+            "BQ_DATASET is missing from the .env file."
+        )
 
     credentials_path = os.getenv(
-        "GOOGLE_APPLICATION_CREDENTIALS"
-    )
+        "GOOGLE_APPLICATION_CREDENTIALS", ""
+    ).strip()
 
-    project_id = os.getenv("BQ_PROJECT")
-    dataset_id = os.getenv("BQ_DATASET")
+    if credentials_path:
+        credential_file = Path(credentials_path)
 
-    if not credentials_path:
-        raise ValueError(
-            "GOOGLE_APPLICATION_CREDENTIALS is missing in .env"
+        if not credential_file.is_absolute():
+            credential_file = PROJECT_ROOT / credential_file
+
+        if not credential_file.is_file():
+            raise FileNotFoundError(
+                "The credentials file configured in "
+                "GOOGLE_APPLICATION_CREDENTIALS was not found. "
+                "Check its path in .env."
+            )
+
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(
+            credential_file.resolve()
         )
 
-    if not project_id:
-        raise ValueError(
-            "BQ_PROJECT is missing in .env"
-        )
+    logger.info("BigQuery project: %s", BQ_PROJECT)
+    logger.info("BigQuery dataset: %s", BQ_DATASET)
+    logger.info("BigQuery location: %s", BQ_LOCATION)
 
-    if not dataset_id:
-        raise ValueError(
-            "BQ_DATASET is missing in .env"
-        )
-
-    credentials_file = Path(
-        credentials_path
-    ).expanduser()
-
-    if not credentials_file.is_absolute():
-        credentials_file = (
-            PROJECT_ROOT / credentials_file
-        ).resolve()
-
-    if not credentials_file.is_file():
-        raise FileNotFoundError(
-            "Service account credentials file not found: "
-            f"{credentials_file}"
-        )
-
-    os.environ[
-        "GOOGLE_APPLICATION_CREDENTIALS"
-    ] = str(credentials_file)
-
-    client = bigquery.Client(
-        project=project_id
+    return bigquery.Client(
+        project=BQ_PROJECT,
+        location=BQ_LOCATION,
     )
 
-    logger.info(
-        "BigQuery project configured: %s",
-        project_id,
+
+# ============================================================
+# 5. READ SOURCE TABLES
+# ============================================================
+
+def read_source_table(client, table_name):
+    """
+    Read a source table into a DataFrame.
+
+    Returns None when the table is missing or cannot be read.
+    Source column names are preserved; they are not assumed.
+    """
+
+    table_id = f"{BQ_PROJECT}.{BQ_DATASET}.{table_name}"
+
+    sql = SQL_BY_TABLE[table_name].format(
+        project=BQ_PROJECT,
+        dataset=BQ_DATASET,
     )
 
-    logger.info(
-        "BigQuery dataset configured: %s",
-        dataset_id,
-    )
-
-    return client, project_id, dataset_id
-
-
-# =========================================================
-# 5. Check source table
-# =========================================================
-
-def table_exists(
-    client: bigquery.Client,
-    project_id: str,
-    dataset_id: str,
-    table_name: str,
-) -> bool:
-    """Return True when a BigQuery table exists."""
-
-    table_id = (
-        f"{project_id}.{dataset_id}.{table_name}"
-    )
+    logger.info("Reading source table: %s", table_id)
 
     try:
+        # Confirm that the individual table exists.
         client.get_table(table_id)
-        return True
 
-    except NotFound:
-        return False
-
-
-# =========================================================
-# 5A. Validate source-table columns
-# =========================================================
-
-def validate_columns(
-    dataframe: pd.DataFrame,
-    table_name: str,
-) -> bool:
-    """
-    Check whether the source table contains the expected columns.
-
-    Missing columns generate a warning but do not stop the export.
-    """
-
-    expected = EXPECTED_COLUMNS.get(
-        table_name,
-        [],
-    )
-
-    if not expected:
-        logger.warning(
-            "No expected column definition found for '%s'.",
-            table_name,
-        )
-
-        return True
-
-    actual_columns = list(
-        dataframe.columns
-    )
-
-    logger.info(
-        "Columns found in %s: %s",
-        table_name,
-        actual_columns,
-    )
-
-    missing_columns = [
-        column
-        for column in expected
-        if column not in actual_columns
-    ]
-
-    if missing_columns:
-        logger.warning(
-            "Source table '%s' is missing expected columns: %s",
-            table_name,
-            missing_columns,
-        )
-
-        return False
-
-    logger.info(
-        "Column validation passed for '%s'.",
-        table_name,
-    )
-
-    return True
-
-
-# =========================================================
-# 6. Read source table
-# =========================================================
-
-def read_source_table(
-    client: bigquery.Client,
-    project_id: str,
-    dataset_id: str,
-    table_name: str,
-    sql_template: str,
-):
-    """
-    Read a source mart table from BigQuery.
-
-    Returns:
-        DataFrame when the table exists and can be read.
-        None when the table is missing or cannot be read.
-    """
-
-    logger.info(
-        "Checking source table: %s",
-        table_name,
-    )
-
-    if not table_exists(
-        client,
-        project_id,
-        dataset_id,
-        table_name,
-    ):
-        logger.warning(
-            "Source table '%s' is missing. "
-            "Skipping this table.",
-            table_name,
-        )
-
-        return None
-
-    query = sql_template.format(
-        project_id=project_id,
-        dataset_id=dataset_id,
-    )
-
-    logger.info(
-        "Reading source table: %s",
-        table_name,
-    )
-
-    try:
         dataframe = client.query(
-            query
+            sql,
+            location=BQ_LOCATION,
         ).to_dataframe()
 
-    except Exception as error:
-        logger.error(
-            "Failed to read '%s': %s",
+        logger.info(
+            "Read %s rows and %s columns from %s",
+            len(dataframe),
+            len(dataframe.columns),
             table_name,
+        )
+
+        if dataframe.empty:
+            logger.warning(
+                "Source table '%s' exists but contains no rows.",
+                table_name,
+            )
+
+        logger.info(
+            "Columns in %s: %s",
+            table_name,
+            list(dataframe.columns),
+        )
+
+        return dataframe
+
+    except NotFound:
+        logger.warning(
+            "Source table '%s' was not found. Skipping it.",
+            table_id,
+        )
+        return None
+
+    except Forbidden:
+        logger.error(
+            "Permission denied while reading '%s'. "
+            "Check BigQuery permissions.",
+            table_id,
+        )
+        return None
+
+    except (BadRequest, GoogleAPIError) as error:
+        logger.error(
+            "Could not read '%s': %s",
+            table_id,
             error,
         )
-
         return None
 
-    logger.info(
-        "Rows loaded from %s: %s",
-        table_name,
-        f"{len(dataframe):,}",
-    )
 
-    validate_columns(
-        dataframe,
-        table_name,
-    )
+# ============================================================
+# 6. EXPORT INDIVIDUAL CSV FILES
+# ============================================================
 
-    return dataframe
+def export_csv(dataframe, filename):
+    """Write a DataFrame to outputs/ and log the row count."""
 
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    output_path = OUTPUT_DIR / filename
 
-# =========================================================
-# 7. Export DataFrame to CSV
-# =========================================================
+    try:
+        dataframe.to_csv(output_path, index=False)
 
-def export_csv(
-    dataframe: pd.DataFrame,
-    filename: str,
-) -> None:
-    """Write a DataFrame to the outputs directory."""
+        logger.info(
+            "Exported %s rows to %s",
+            len(dataframe),
+            output_path,
+        )
 
-    OUTPUT_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+        return True
 
-    output_file = OUTPUT_DIR / filename
-
-    dataframe.to_csv(
-        output_file,
-        index=False,
-    )
-
-    logger.info(
-        "CSV exported: %s | rows=%s",
-        output_file,
-        f"{len(dataframe):,}",
-    )
+    except (OSError, ValueError) as error:
+        logger.error(
+            "Failed to export %s: %s",
+            output_path,
+            error,
+        )
+        return False
 
 
-# =========================================================
-# 8. Combine mart results
-# =========================================================
+# ============================================================
+# 7. COMBINE THE AVAILABLE SOURCE TABLES
+# ============================================================
 
-def create_careflow_summary(
-    transition_times,
-    loopbacks,
-    kpi_summary,
-):
+def create_careflow_summary(source_data):
     """
-    Combine available mart tables into one dashboard summary.
+    Combine available source DataFrames.
 
-    A source_table column identifies the originating mart.
+    Adds source_table so dashboard users can identify
+    the mart each row came from.
+
+    Different source schemas are preserved as separate columns.
     """
 
-    frames = []
+    available_frames = []
 
-    if transition_times is not None:
-        dataframe = transition_times.copy()
+    for table_name in SOURCE_TABLES:
+        dataframe = source_data.get(table_name)
 
-        dataframe["source_table"] = (
-            TRANSITION_TABLE
-        )
+        if dataframe is None:
+            continue
 
-        frames.append(dataframe)
+        if dataframe.empty:
+            logger.warning(
+                "Not adding empty table '%s' to the summary.",
+                table_name,
+            )
+            continue
 
-    if loopbacks is not None:
-        dataframe = loopbacks.copy()
+        frame = dataframe.copy()
+        frame.insert(0, "source_table", table_name)
+        available_frames.append(frame)
 
-        dataframe["source_table"] = (
-            LOOPBACK_TABLE
-        )
-
-        frames.append(dataframe)
-
-    if kpi_summary is not None:
-        dataframe = kpi_summary.copy()
-
-        dataframe["source_table"] = (
-            KPI_TABLE
-        )
-
-        frames.append(dataframe)
-
-    if not frames:
+    if not available_frames:
         logger.warning(
-            "No source tables were available. "
-            "careflow_summary will not be created."
+            "No source data is available. "
+            "The combined summary will not be created."
         )
-
         return None
 
-    combined = pd.concat(
-        frames,
+    summary = pd.concat(
+        available_frames,
         ignore_index=True,
         sort=False,
     )
 
     logger.info(
-        "Combined careflow_summary rows: %s",
-        f"{len(combined):,}",
+        "Combined summary contains %s rows and %s columns.",
+        len(summary),
+        len(summary.columns),
     )
 
-    return combined
+    return summary
 
 
-# =========================================================
-# 9. Write summary to BigQuery
-# =========================================================
+# ============================================================
+# 8. WRITE COMBINED SUMMARY TO BIGQUERY
+# ============================================================
 
-def write_summary_to_bigquery(
-    client: bigquery.Client,
-    project_id: str,
-    dataset_id: str,
-    dataframe: pd.DataFrame,
-) -> None:
-    """Write the combined summary table to BigQuery."""
+def write_summary_to_bigquery(client, dataframe):
+    """Write careflow_summary to BigQuery, replacing old results."""
 
-    table_id = (
-        f"{project_id}.{dataset_id}.{SUMMARY_TABLE}"
-    )
-
-    logger.info(
-        "Writing careflow_summary to BigQuery: %s",
-        table_id,
-    )
-
-    rows_before = 0
-
-    try:
-        existing_table = client.get_table(
-            table_id
-        )
-
-        query = f"""
-        SELECT COUNT(*) AS row_count
-        FROM `{table_id}`
-        """
-
-        result = next(
-            iter(
-                client.query(query).result()
-            )
-        )
-
-        rows_before = int(
-            result["row_count"]
-        )
-
-        logger.info(
-            "Rows already in careflow_summary: %s",
-            f"{rows_before:,}",
-        )
-
-    except NotFound:
-        logger.info(
-            "careflow_summary does not exist yet. "
-            "It will be created."
-        )
+    table_id = f"{BQ_PROJECT}.{BQ_DATASET}.{SUMMARY_TABLE}"
 
     job_config = bigquery.LoadJobConfig(
-        write_disposition=(
-            bigquery.WriteDisposition.WRITE_TRUNCATE
-        )
+        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
+        autodetect=True,
     )
 
-    load_job = client.load_table_from_dataframe(
-        dataframe,
-        table_id,
-        job_config=job_config,
-    )
-
-    load_job.result()
-
-    logger.info(
-        "BigQuery write completed: %s",
-        load_job.job_id,
-    )
-
-    rows_after = 0
-
-    query = f"""
-    SELECT COUNT(*) AS row_count
-    FROM `{table_id}`
-    """
-
-    result = next(
-        iter(
-            client.query(query).result()
-        )
-    )
-
-    rows_after = int(
-        result["row_count"]
-    )
-
-    logger.info(
-        "Rows written to careflow_summary: %s",
-        f"{rows_after:,}",
-    )
-
-    if rows_after != len(dataframe):
-        raise RuntimeError(
-            "careflow_summary row-count verification failed. "
-            f"Expected {len(dataframe):,}, "
-            f"found {rows_after:,}."
+    try:
+        logger.info(
+            "Writing %s rows to BigQuery table %s",
+            len(dataframe),
+            table_id,
         )
 
-    logger.info(
-        "SUCCESS: careflow_summary row count verified."
-    )
+        load_job = client.load_table_from_dataframe(
+            dataframe,
+            table_id,
+            job_config=job_config,
+            location=BQ_LOCATION,
+        )
+
+        load_job.result()
+
+        destination = client.get_table(table_id)
+
+        logger.info(
+            "BigQuery export complete: %s rows in %s",
+            destination.num_rows,
+            table_id,
+        )
+
+        if destination.num_rows != len(dataframe):
+            logger.warning(
+                "Expected %s rows, but BigQuery reports %s rows.",
+                len(dataframe),
+                destination.num_rows,
+            )
+
+        return True
+
+    except Forbidden:
+        logger.error(
+            "Permission denied while writing %s. "
+            "Check dataset and BigQuery job permissions.",
+            table_id,
+        )
+        return False
+
+    except NotFound:
+        logger.error(
+            "The destination dataset was not found. "
+            "Check BQ_PROJECT and BQ_DATASET in .env. "
+            "Create the dataset only after verifying the project."
+        )
+        return False
+
+    except (BadRequest, GoogleAPIError, ValueError) as error:
+        logger.error(
+            "Failed to write BigQuery summary: %s",
+            error,
+        )
+        return False
 
 
-# =========================================================
-# 10. Main
-# =========================================================
+# ============================================================
+# 9. MAIN PIPELINE
+# ============================================================
 
 def main():
     logger.info("=" * 60)
@@ -554,117 +390,76 @@ def main():
     logger.info("=" * 60)
 
     try:
-        client, project_id, dataset_id = (
-            create_bigquery_client()
-        )
+        client = create_bigquery_client()
 
-        # -------------------------------------------------
-        # Read transition_times
-        # -------------------------------------------------
+    except (ValueError, FileNotFoundError, GoogleAPIError) as error:
+        logger.error("BigQuery client setup failed: %s", error)
+        return 1
 
-        transition_times = read_source_table(
-            client=client,
-            project_id=project_id,
-            dataset_id=dataset_id,
-            table_name=TRANSITION_TABLE,
-            sql_template=SQL_TRANSITION_TIMES,
-        )
+    dataset_id = f"{BQ_PROJECT}.{BQ_DATASET}"
 
-        # -------------------------------------------------
-        # Read loopbacks
-        # -------------------------------------------------
+    try:
+        client.get_dataset(dataset_id)
 
-        loopbacks = read_source_table(
-            client=client,
-            project_id=project_id,
-            dataset_id=dataset_id,
-            table_name=LOOPBACK_TABLE,
-            sql_template=SQL_LOOPBACKS,
-        )
-
-        # -------------------------------------------------
-        # Read kpi_summary
-        # -------------------------------------------------
-
-        kpi_summary = read_source_table(
-            client=client,
-            project_id=project_id,
-            dataset_id=dataset_id,
-            table_name=KPI_TABLE,
-            sql_template=SQL_KPI_SUMMARY,
-        )
-
-        # -------------------------------------------------
-        # Export individual CSV files
-        # -------------------------------------------------
-
-        if transition_times is not None:
-            export_csv(
-                transition_times,
-                "transition_times.csv",
-            )
-
-        if loopbacks is not None:
-            export_csv(
-                loopbacks,
-                "loopbacks.csv",
-            )
-
-        if kpi_summary is not None:
-            export_csv(
-                kpi_summary,
-                "kpi_summary.csv",
-            )
-
-        # -------------------------------------------------
-        # Create combined summary
-        # -------------------------------------------------
-
-        careflow_summary = create_careflow_summary(
-            transition_times=transition_times,
-            loopbacks=loopbacks,
-            kpi_summary=kpi_summary,
-        )
-
-        if careflow_summary is None:
-            logger.warning(
-                "No data available for careflow_summary."
-            )
-
-            return 0
-
-        # -------------------------------------------------
-        # Export combined CSV
-        # -------------------------------------------------
-
-        export_csv(
-            careflow_summary,
-            "careflow_summary.csv",
-        )
-
-        # -------------------------------------------------
-        # Write combined table to BigQuery
-        # -------------------------------------------------
-
-        write_summary_to_bigquery(
-            client=client,
-            project_id=project_id,
-            dataset_id=dataset_id,
-            dataframe=careflow_summary,
-        )
-
-    except Exception as error:
+    except NotFound:
         logger.error(
-            "CareFlow results export failed: %s",
+            "Dataset '%s' does not exist or is not accessible. "
+            "Verify the project and dataset in Google Cloud Console.",
+            dataset_id,
+        )
+        return 1
+
+    except (Forbidden, GoogleAPIError) as error:
+        logger.error(
+            "Could not access dataset '%s': %s",
+            dataset_id,
             error,
         )
+        return 1
 
+    source_data = {}
+
+    # Read each source table and export its individual CSV.
+    for table_name in SOURCE_TABLES:
+        dataframe = read_source_table(client, table_name)
+        source_data[table_name] = dataframe
+
+        if dataframe is not None:
+            export_csv(
+                dataframe,
+                f"{table_name}.csv",
+            )
+
+    # Create the combined summary from available source data.
+    summary = create_careflow_summary(source_data)
+
+    if summary is None:
+        logger.warning(
+            "No careflow_summary CSV or BigQuery table was created."
+        )
+        logger.info("Export finished with no available source data.")
+        return 0
+
+    csv_success = export_csv(
+        summary,
+        f"{SUMMARY_TABLE}.csv",
+    )
+
+    bq_success = write_summary_to_bigquery(
+        client,
+        summary,
+    )
+
+    if not csv_success or not bq_success:
+        logger.error(
+            "Export finished with one or more output failures."
+        )
         return 1
 
     logger.info("=" * 60)
-    logger.info(
-        "CareFlow Results Export Completed Successfully"
-    )
+    logger.info("CareFlow export completed successfully.")
+    logger.info("Total summary rows: %s", len(summary))
+    logger.info("CSV output directory: %s", OUTPUT_DIR)
     logger.info("=" * 60)
 
     return 0
