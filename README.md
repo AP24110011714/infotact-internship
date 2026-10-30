@@ -129,8 +129,6 @@ Long waits and repeated activities are signals to examine, not proof of poor cli
 - **Project:** CareFlow: Clinical Pathway Process Mining
 - **Project start date:** 10 October 2026
 
-## Author
-
 ## Authors
 
 - **Sravana Bandi**, GitHub: [AP24110011714](https://github.com/AP24110011714)
