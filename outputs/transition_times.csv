@@ -1,0 +1,13 @@
+from_activity,to_activity,transition_count,avg_wait_minutes
+Blood Test,Doctor Consultation,40,35.38
+Blood Test,X-Ray,108,30.73
+Blood Test,Diagnosis,179,34.4
+Diagnosis,Treatment,500,32.98
+Doctor Consultation,Blood Test,326,31.9
+Doctor Consultation,X-Ray,37,33.7
+Doctor Consultation,Diagnosis,199,31.52
+Doctor Consultation,Doctor Consultation,22,36.05
+Registration,Doctor Consultation,499,34.24
+Treatment,Discharge,500,32.89
+X-Ray,Doctor Consultation,23,33.74
+X-Ray,Diagnosis,122,32.07

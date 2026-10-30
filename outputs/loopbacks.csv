@@ -1,0 +1,64 @@
+case_id,from_activity,to_activity,loop_count
+P0354,Blood Test,Doctor Consultation,1
+P0284,Blood Test,Doctor Consultation,1
+P0321,Blood Test,Doctor Consultation,1
+P0332,Blood Test,Doctor Consultation,1
+P0020,Blood Test,Doctor Consultation,1
+P0119,Blood Test,Doctor Consultation,1
+P0090,Blood Test,Doctor Consultation,1
+P0295,Blood Test,Doctor Consultation,1
+P0029,Blood Test,Doctor Consultation,1
+P0077,Blood Test,Doctor Consultation,1
+P0080,Blood Test,Doctor Consultation,1
+P0346,Blood Test,Doctor Consultation,1
+P0066,Blood Test,Doctor Consultation,1
+P0016,Blood Test,Doctor Consultation,1
+P0210,Blood Test,Doctor Consultation,1
+P0248,Blood Test,Doctor Consultation,1
+P0252,Blood Test,Doctor Consultation,1
+P0421,Blood Test,Doctor Consultation,1
+P0109,Blood Test,Doctor Consultation,1
+P0128,Blood Test,Doctor Consultation,1
+P0004,Blood Test,Doctor Consultation,1
+P0351,Blood Test,Doctor Consultation,1
+P0171,Blood Test,Doctor Consultation,1
+P0191,Blood Test,Doctor Consultation,1
+P0490,Blood Test,Doctor Consultation,1
+P0372,Blood Test,Doctor Consultation,1
+P0049,Blood Test,Doctor Consultation,1
+P0409,Blood Test,Doctor Consultation,1
+P0451,Blood Test,Doctor Consultation,1
+P0211,Blood Test,Doctor Consultation,1
+P0242,Blood Test,Doctor Consultation,1
+P0462,Blood Test,Doctor Consultation,1
+P0175,Blood Test,Doctor Consultation,1
+P0296,Blood Test,Doctor Consultation,1
+P0461,Blood Test,Doctor Consultation,1
+P0144,Blood Test,Doctor Consultation,1
+P0219,Blood Test,Doctor Consultation,1
+P0292,Blood Test,Doctor Consultation,1
+P0078,Blood Test,Doctor Consultation,1
+P0120,Blood Test,Doctor Consultation,1
+P0309,X-Ray,Doctor Consultation,1
+P0480,X-Ray,Doctor Consultation,1
+P0065,X-Ray,Doctor Consultation,1
+P0282,X-Ray,Doctor Consultation,1
+P0339,X-Ray,Doctor Consultation,1
+P0305,X-Ray,Doctor Consultation,1
+P0169,X-Ray,Doctor Consultation,1
+P0440,X-Ray,Doctor Consultation,1
+P0438,X-Ray,Doctor Consultation,1
+P0180,X-Ray,Doctor Consultation,1
+P0019,X-Ray,Doctor Consultation,1
+P0064,X-Ray,Doctor Consultation,1
+P0193,X-Ray,Doctor Consultation,1
+P0013,X-Ray,Doctor Consultation,1
+P0239,X-Ray,Doctor Consultation,1
+P0220,X-Ray,Doctor Consultation,1
+P0192,X-Ray,Doctor Consultation,1
+P0412,X-Ray,Doctor Consultation,1
+P0166,X-Ray,Doctor Consultation,1
+P0048,X-Ray,Doctor Consultation,1
+P0276,X-Ray,Doctor Consultation,1
+P0273,X-Ray,Doctor Consultation,1
+P0089,X-Ray,Doctor Consultation,1
