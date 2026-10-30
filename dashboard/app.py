@@ -68,4 +68,23 @@ if chosen:
 if dur.empty:
     st.warning("No cases match the selected filters.")
     st.stop()
+    st.subheader("Conformance to the ideal pathway")
+
+    conf = load("conformance_results.csv")
+    ok = int(conf["conforms"].sum())
+    n = len(conf)
     
+    k1, k2, k3 = st.columns(3)
+    k1.metric("Conforming cases", f"{ok:,}")
+    k2.metric("Non-conforming cases", f"{n - ok:,}")
+    k3.metric("Conformance rate", f"{ok / n * 100:.1f}%")
+    
+    dev = (conf.loc[~conf["conforms"], "missing_or_out_of_order"]
+           .value_counts().head(10).rename("cases"))
+    if not dev.empty:
+        st.bar_chart(dev)
+        st.caption("Most common deviations: key steps that are missing or out "
+                   "of order. This is a simplified order check, not a full "
+                   "token-based replay.")
+    
+    st.dataframe(conf[~conf["conforms"]].head(50), use_container_width=True)
