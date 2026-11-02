@@ -1,0 +1,2101 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CareFlow Prototype</title>
+<style>
+:root{--bg:#F6F7F4;--card:#fff;--ink:#14232F;--mute:#5B6770;--line:#DDE3E6;--navy:#0F2A3D;--teal:#167080;--cyan:#5CC8D4;--warn:#C2410C;--ok:#2F7D4F}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0C1A24;--card:#13293A;--ink:#E3ECF0;--mute:#9DB0BC;--line:#26404F;--navy:#06121A;--teal:#5CC8D4;--cyan:#5CC8D4;--warn:#FB923C;--ok:#6EC28F}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "DM Sans",system-ui,Arial,sans-serif}
+header{background:var(--navy);color:#fff;padding:18px 16px}header h1{margin:0;font-size:22px}header p{margin:2px 0 0;color:#9fd7de;font-size:13px}
+nav{display:flex;gap:4px;overflow-x:auto;background:var(--card);border-bottom:1px solid var(--line);padding:0 8px;position:sticky;top:0;z-index:5}
+nav button{border:0;background:none;color:var(--mute);padding:12px 14px;font:600 14px inherit;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
+nav button.on{color:var(--teal);border-color:var(--teal)}
+main{max-width:1150px;margin:0 auto;padding:16px}section.tab{display:none}section.tab.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 8px;font-size:17px}.card h3{margin:0 0 6px;font-size:15px}
+.grid{display:grid;gap:12px}.g4{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}.kpi b{display:block;font-size:26px;color:var(--teal)}.kpi span{color:var(--mute);font-size:12px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:middle}
+.real{background:#dff3e7;color:#1d6b3f}.sim{background:#fde7d3;color:#9a3d0a}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .real{background:#17402b;color:#9be0b6}:root:not([data-theme=light]) .sim{background:#4a2a12;color:#fdba74}}
+.banner{border-left:5px solid var(--warn);background:var(--card);border:1px solid var(--line);border-left:5px solid var(--warn);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13.5px}
+.bar{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px}.bar .l{width:130px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .t{flex:1;background:var(--line);border-radius:5px;height:18px;overflow:hidden}.bar .f{height:100%;background:var(--teal)}.bar .v{width:92px;text-align:right;color:var(--mute);font-variant-numeric:tabular-nums}
+.bar .f.w{background:var(--warn)}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--mute);font-weight:600;cursor:pointer;position:sticky;top:0;background:var(--card)}
+.scroll{max-height:340px;overflow:auto}
+label{font-size:13px;color:var(--mute)}select,input[type=text],input[type=file]{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);max-width:100%}
+input[type=range]{width:200px;accent-color:var(--teal)}.row{display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-bottom:10px}
+.chip{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 7px;margin:2px;font-size:12px}
+.step{display:flex;gap:10px;align-items:flex-start;margin:6px 0}.step i{flex:none;width:26px;height:26px;border-radius:50%;background:var(--teal);color:#fff;font-style:normal;font-weight:700;display:grid;place-items:center;font-size:13px}
+svg text{fill:var(--ink);font:12px sans-serif}.small{font-size:12px;color:var(--mute)}
+.hist{display:flex;align-items:flex-end;gap:2px;height:110px}.hist div{flex:1;background:var(--teal);min-height:1px;border-radius:2px 2px 0 0}
+button.btn{background:var(--teal);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:600 13px inherit;cursor:pointer}
+.ev{border-left:3px solid var(--teal);margin-left:8px;padding:2px 0 10px 14px;position:relative}.ev:before{content:"";position:absolute;left:-8px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--teal)}
+.ev.re:before{background:var(--warn)}.ev small{color:var(--mute)}.ev .wt{color:var(--warn);font-size:12px}
+</style></head><body>
+<header><h1>CareFlow · Clinical Pathway Process Mining</h1><p>Prototype by Abhinandan Naik · Infotact Solutions Data Analytics Internship, Batch 22.1</p></header>
+<nav id="nav"></nav>
+<main>
+<section class="tab on" id="t-overview">
+ <div class="banner"><b>Read this first.</b> Two kinds of data are used and every panel is tagged:
+ <span class="tag real">REAL</span> = your repo file <code>Sepsis_Dataset_cleaned.csv</code> (250 patients, one row each).
+ <span class="tag sim">SIMULATED</span> = an event log created by <code>generate_events.py</code> for those same patients (activities after registration and all timestamps are simulated, seed 42). Process-mining results therefore demonstrate the <i>method</i>, not real hospital findings.</div>
+ <div class="card"><h2>What CareFlow does</h2><p>Hospitals record each step a patient goes through. CareFlow turns those records into an <b>event log</b> (case, activity, time) and then measures the real pathway: which routes patients take, where they wait, which steps repeat, and whether the expected order is followed.</p>
+ <div class="step"><i>1</i><div><b>Collect &amp; clean</b> – real patient table, checked for nulls and duplicates.</div></div>
+ <div class="step"><i>2</i><div><b>Build event log</b> – <code>case_id, activity, timestamp</code> (simulated here because the real file has no event sequence).</div></div>
+ <div class="step"><i>3</i><div><b>Analyse</b> – variants, directly-follows graph, waiting time, rework, conformance.</div></div>
+ <div class="step"><i>4</i><div><b>Present</b> – KPIs and a case explorer, as in the Streamlit dashboard.</div></div></div>
+ <div class="grid g4" id="ov-kpis"></div>
+</section>
+<section class="tab" id="t-real"><div class="banner">All panels here use the <span class="tag real">REAL</span> patient file only. Descriptive analytics, not process mining.</div>
+ <div class="row"><div><label>Ward<br><select id="fWard"></select></label></div><div><label>Doctor<br><select id="fDoc"></select></label></div></div>
+ <div class="grid g4" id="r-kpis"></div>
+ <div class="grid g2"><div class="card"><h3>Patients by ward</h3><div id="r-ward"></div></div><div class="card"><h3>Patients by doctor</h3><div id="r-doc"></div></div>
+ <div class="card"><h3>Lactate (mmol/L) distribution</h3><div class="hist" id="h-lac"></div><div class="small" id="h-lac-s"></div></div>
+ <div class="card"><h3>Temperature (°C) distribution</h3><div class="hist" id="h-temp"></div><div class="small" id="h-temp-s"></div></div>
+ <div class="card"><h3>Admissions per month</h3><div id="r-month"></div></div>
+ <div class="card"><h3>Data-quality finding</h3><p id="r-dq"></p></div></div>
+ <div class="card"><h3>Patient table</h3><div class="scroll"><table id="r-table"></table></div></div>
+</section>
+<section class="tab" id="t-pm"><div class="banner"><span class="tag sim">SIMULATED</span> event log built on the real patients. Use the controls like the dashboard sidebar.</div>
+ <div class="row"><div><label>Min case duration (h): <b id="vMin">0</b><br><input type="range" id="sMin" min="0" max="100" value="0"></label></div>
+ <div><label>Ward<br><select id="pWard"></select></label></div><div><label>Pathway<br><select id="pType"><option value="all">All patients</option><option value="sep">Screen-positive (lactate &gt; 2.5 or temp ≥ 38.5)</option><option value="non">Screen-negative</option></select></label></div></div>
+ <div class="grid g4" id="p-kpis"></div>
+ <div class="grid g2">
+  <div class="card"><h3>Process variants (top 8)</h3><div id="p-var"></div></div>
+  <div class="card"><h3>Case duration histogram (hours)</h3><div class="hist" id="p-hist"></div><div class="small" id="p-hist-s"></div></div>
+  <div class="card"><h3>Bottlenecks: slowest transitions (mean wait)</h3><div id="p-bot"></div></div>
+  <div class="card"><h3>Rework: activities repeated within a case</h3><div id="p-rew"></div></div></div>
+ <div class="card"><h3>Directly-follows graph</h3><div class="small">Line thickness = number of times the step pair occurs. Hover a line for count and mean wait.</div><div id="p-dfg" style="overflow:auto"></div></div>
+ <div class="card"><h3>Conformance (simplified)</h3><p class="small">A case conforms if ER Registration → ER Triage → Lab Tests → Doctor Review → Discharge appear in that order (other steps may sit between). This is a subsequence check, not token-replay.</p><div id="p-conf"></div></div>
+</section>
+<section class="tab" id="t-case"><div class="banner"><span class="tag sim">SIMULATED</span> timeline. Case IDs and ward/doctor/vitals are <span class="tag real">REAL</span>.</div>
+ <div class="row"><div><label>Case ID<br><input type="text" id="cSearch" placeholder="e.g. P00005" list="cl"><datalist id="cl"></datalist></label></div><div><button class="btn" id="cRand">Random case</button> <button class="btn" id="cRew">Random rework case</button></div></div>
+ <div id="c-out" class="card"></div></section>
+<section class="tab" id="t-own"><div class="card"><h2>Load your own event log</h2><p>Select a CSV with columns <code>case_id, activity, timestamp</code> (e.g. the <code>clean_log.csv</code> your scripts use). Process Mining and Case Explorer then recompute on it. Nothing is uploaded; it stays in your browser.</p>
+ <input type="file" id="file" accept=".csv"> <button class="btn" id="reset">Reset to simulated log</button><p id="own-msg" class="small"></p></div>
+ <div class="card"><h2>Run it in your repo</h2><pre style="overflow:auto">python generate_events.py data/processed/Sepsis_Dataset_cleaned.csv data/processed/clean_log.csv
+python main.py   # or your analysis scripts
+streamlit run dashboard/app.py</pre><p class="small">Keep the "simulated" label in your report. If you later obtain a real event log, only <code>clean_log.csv</code> changes.</p></div></section>
+</main>
+<script>
+const REAL_CSV=`patient_id,admission_date,temperature_c,bp_systolic,bp_diastolic,heart_rate,wbc_count,lactate_mmol_l,sepsis_flag,ward,doctor_on_duty
+P00001,2023-06-26,37.7,90,86,65,11.9,2.1,No,ER,Dr. Mensah
+P00002,2023-02-12,36.8,133,98,54,10.2,2.6,No,Ward-X,Dr. Patel
+P00003,2023-01-28,38.0,157,58,64,7.2,-0.2,No,Ward-X,Dr. Nguyen
+P00004,2023-05-10,39.3,136,82,114,4.7,2.2,No,ER,Dr. Patel
+P00005,2023-08-30,36.6,85,67,64,9.4,3.0,No,ICU-A,Dr. Patel
+P00006,2023-06-05,36.6,105,69,154,8.4,0.6,No,ER,Dr. Adebayo
+P00007,2023-02-06,39.4,140,68,100,10.1,3.5,No,ICU-B,Dr. Rodriguez
+P00008,2023-09-17,38.2,101,65,93,9.2,2.2,No,ER,Dr. Mensah
+P00009,2023-06-29,36.3,124,76,67,10.7,1.1,No,ICU-B,Dr. Nguyen
+P00010,2023-05-19,37.8,130,65,106,5.1,1.7,No,Ward-X,Dr. Mensah
+P00011,2023-05-08,36.3,96,78,74,11.6,2.4,No,ICU-A,Dr. Mensah
+P00012,2023-08-05,36.3,114,74,91,7.7,1.9,No,Ward-X,Dr. Rodriguez
+P00013,2023-12-03,37.4,50,72,152,14.3,2.3,No,ICU-B,Dr. Mensah
+P00014,2023-06-16,34.1,95,64,86,4.6,0.9,No,ICU-B,Dr. Mensah
+P00015,2023-10-27,34.4,110,68,117,13.1,2.0,No,ICU-B,Dr. Patel
+P00016,2023-04-18,36.2,90,84,70,7.7,0.4,No,ICU-A,Dr. Rodriguez
+P00017,2023-07-16,35.5,148,81,87,4.7,1.7,No,ER,Dr. Adebayo
+P00018,2023-12-09,37.5,86,63,132,5.3,0.9,No,Ward-X,Dr. Nguyen
+P00019,2023-02-10,35.6,106,76,72,5.9,1.1,No,Ward-X,Dr. Mensah
+P00020,2023-02-08,34.9,118,84,133,8.5,3.0,No,ER,Dr. Nguyen
+P00021,2023-05-06,39.2,144,55,106,8.8,2.9,No,Ward-X,Dr. Adebayo
+P00022,2023-03-09,36.7,86,82,74,5.0,2.4,No,ICU-A,Dr. Nguyen
+P00023,2023-12-29,37.1,138,67,104,6.9,0.7,No,Ward-X,Dr. Adebayo
+P00024,2023-01-06,34.9,115,82,112,14.5,1.5,No,ICU-B,Dr. Patel
+P00025,2023-10-17,36.2,95,66,104,13.0,3.0,No,ER,Dr. Mensah
+P00026,2023-01-22,37.2,124,53,49,8.5,1.9,No,ICU-A,Dr. Adebayo
+P00027,2023-10-21,35.3,119,55,70,7.1,4.1,No,ER,Dr. Nguyen
+P00028,2023-10-15,37.6,103,76,82,7.4,2.2,No,ICU-A,Dr. Mensah
+P00029,2023-07-31,36.1,116,78,86,9.1,2.0,No,ICU-B,Dr. Patel
+P00030,2023-01-07,36.6,107,64,104,3.4,1.5,No,ER,Dr. Mensah
+P00031,2023-06-17,36.1,117,83,92,6.1,1.9,No,Ward-X,Dr. Adebayo
+P00032,2023-03-16,39.8,128,55,55,1.2,1.6,No,ICU-A,Dr. Patel
+P00033,2023-03-08,37.0,147,74,98,8.4,2.5,No,ER,Dr. Nguyen
+P00034,2023-10-01,35.4,90,60,103,9.3,2.8,No,Ward-X,Dr. Patel
+P00035,2023-11-06,38.2,158,67,102,5.3,1.0,No,ER,Dr. Patel
+P00036,2023-04-21,35.2,76,76,115,12.5,0.5,No,ER,Dr. Rodriguez
+P00037,2023-07-14,37.3,112,65,109,2.7,0.0,No,ER,Dr. Patel
+P00038,2023-10-11,34.1,127,70,99,1.9,2.3,No,ICU-A,Dr. Patel
+P00039,2023-09-29,35.0,121,87,86,7.8,0.7,No,Ward-X,Dr. Mensah
+P00040,2023-04-19,37.3,103,68,46,10.7,-0.4,No,ICU-B,Dr. Nguyen
+P00041,2023-08-07,38.1,111,85,99,12.9,2.2,No,ICU-A,Dr. Mensah
+P00042,2023-08-03,37.3,105,61,93,5.4,4.3,No,ICU-A,Dr. Mensah
+P00043,2023-10-28,36.8,103,81,95,10.8,1.8,No,ICU-A,Dr. Adebayo
+P00044,2023-01-27,36.5,132,92,56,6.9,2.6,No,ICU-B,Dr. Mensah
+P00045,2023-08-21,34.8,122,45,61,6.4,1.9,No,Ward-X,Dr. Rodriguez
+P00046,2023-08-21,35.9,101,65,114,10.1,1.7,No,Ward-X,Dr. Rodriguez
+P00047,2023-05-14,36.3,133,82,87,9.3,2.7,No,Ward-X,Dr. Adebayo
+P00048,2023-11-02,38.6,121,73,105,1.5,1.5,No,ER,Dr. Nguyen
+P00049,2023-11-15,37.5,131,79,89,12.2,2.1,No,ER,Dr. Nguyen
+P00050,2023-11-21,34.4,128,68,89,11.8,2.1,No,ER,Dr. Mensah
+P00051,2023-01-14,37.5,98,76,111,4.8,1.1,No,ICU-B,Dr. Mensah
+P00052,2023-08-03,36.4,104,73,75,8.4,2.8,No,ER,Dr. Mensah
+P00053,2023-08-11,36.0,130,89,90,8.7,1.6,No,ICU-B,Dr. Nguyen
+P00054,2023-08-19,37.9,127,78,76,7.9,1.0,No,Ward-X,Dr. Patel
+P00055,2023-08-07,38.5,115,79,77,5.1,2.3,No,ER,Dr. Rodriguez
+P00056,2023-01-04,38.4,117,70,80,4.6,0.9,No,ER,Dr. Patel
+P00057,2023-11-03,35.7,141,69,94,6.9,1.8,No,ICU-A,Dr. Patel
+P00058,2023-03-04,36.5,103,70,76,11.1,1.8,No,ICU-B,Dr. Nguyen
+P00059,2023-04-14,37.5,126,80,119,8.9,2.9,No,Ward-X,Dr. Patel
+P00060,2023-09-24,38.5,111,70,66,5.7,2.3,No,ICU-A,Dr. Adebayo
+P00061,2023-07-25,36.3,111,78,83,9.7,1.8,No,ICU-A,Dr. Mensah
+P00062,2023-03-15,36.7,137,100,77,-3.0,2.6,No,Ward-X,Dr. Adebayo
+P00063,2023-01-07,35.3,132,85,124,11.0,3.2,No,ICU-A,Dr. Rodriguez
+P00064,2023-06-19,35.2,131,71,93,0.9,2.4,No,ICU-B,Dr. Mensah
+P00065,2023-07-25,38.2,141,89,114,5.7,1.8,No,ICU-B,Dr. Patel
+P00066,2023-08-28,39.0,115,70,51,3.1,0.5,No,ER,Dr. Rodriguez
+P00067,2023-06-15,36.9,129,51,95,2.5,0.7,No,ICU-A,Dr. Mensah
+P00068,2023-11-18,38.5,109,63,110,11.1,1.5,No,ER,Dr. Patel
+P00069,2023-07-07,37.5,121,53,90,5.4,1.2,No,ICU-A,Dr. Adebayo
+P00070,2023-04-27,36.0,112,71,115,8.2,1.6,No,ICU-B,Dr. Mensah
+P00071,2023-03-22,37.5,117,75,75,6.8,1.9,No,ICU-B,Dr. Patel
+P00072,2023-04-23,39.3,127,95,123,8.7,2.3,No,ICU-B,Dr. Adebayo
+P00073,2023-08-30,36.9,99,79,145,7.3,1.7,No,ICU-A,Dr. Rodriguez
+P00074,2023-09-12,39.3,157,72,79,2.5,2.3,No,ICU-B,Dr. Rodriguez
+P00075,2023-08-25,33.1,95,85,77,10.5,1.9,No,ICU-A,Dr. Rodriguez
+P00076,2023-02-27,38.2,91,48,124,5.3,-0.2,No,ER,Dr. Rodriguez
+P00077,2023-02-05,37.1,138,78,127,1.6,0.9,No,ICU-A,Dr. Nguyen
+P00078,2023-07-12,36.6,131,84,75,5.5,1.7,No,ER,Dr. Mensah
+P00079,2023-02-06,37.1,127,57,77,12.3,0.6,No,ICU-A,Dr. Mensah
+P00080,2023-12-03,34.0,128,89,81,10.0,2.4,No,ER,Dr. Nguyen
+P00081,2023-01-24,36.7,115,79,54,5.8,3.3,No,ICU-B,Dr. Patel
+P00082,2023-10-08,37.5,97,70,65,5.8,3.0,No,ER,Dr. Patel
+P00083,2023-06-24,39.2,117,83,63,5.9,1.6,No,ICU-B,Dr. Rodriguez
+P00084,2023-08-09,36.2,101,102,69,14.3,3.3,No,ICU-B,Dr. Adebayo
+P00085,2023-06-27,35.8,135,77,87,8.3,1.9,No,ER,Dr. Patel
+P00086,2023-10-26,36.2,112,78,94,8.5,1.5,No,ICU-A,Dr. Adebayo
+P00087,2023-08-09,38.4,98,69,127,10.6,1.2,No,ICU-A,Dr. Mensah
+P00088,2023-09-14,37.5,109,65,63,7.8,1.5,No,Ward-X,Dr. Adebayo
+P00089,2023-11-05,36.2,123,85,113,6.1,1.4,No,ICU-A,Dr. Mensah
+P00090,2023-07-31,37.8,104,65,83,6.3,2.0,No,Ward-X,Dr. Nguyen
+P00091,2023-01-21,37.1,99,76,87,6.7,2.0,No,ICU-A,Dr. Nguyen
+P00092,2023-01-04,38.5,120,69,105,6.9,1.8,No,ICU-A,Dr. Rodriguez
+P00093,2023-09-29,35.9,120,81,60,9.5,2.2,No,ICU-B,Dr. Patel
+P00094,2023-08-26,36.5,105,79,98,7.2,3.0,No,Ward-X,Dr. Rodriguez
+P00095,2023-08-23,36.4,106,87,92,9.6,2.7,No,ICU-A,Dr. Mensah
+P00096,2023-10-02,34.8,120,69,100,6.7,0.3,No,Ward-X,Dr. Rodriguez
+P00097,2023-01-02,37.4,86,72,95,7.3,-0.8,No,ICU-B,Dr. Adebayo
+P00098,2023-08-05,37.4,87,63,149,0.0,2.7,No,ICU-B,Dr. Mensah
+P00099,2023-02-17,37.0,101,70,72,10.2,0.4,No,Ward-X,Dr. Nguyen
+P00100,2023-06-05,36.6,111,80,75,8.2,1.6,No,ICU-B,Dr. Patel
+P00101,2023-10-13,34.9,121,84,72,10.5,0.6,No,ER,Dr. Mensah
+P00102,2023-12-28,36.4,145,64,74,-3.1,0.0,No,ER,Dr. Mensah
+P00103,2023-09-16,36.5,132,85,72,14.3,2.3,No,ICU-B,Dr. Adebayo
+P00104,2023-11-26,35.8,112,91,118,6.5,2.6,No,ER,Dr. Patel
+P00105,2023-11-23,36.8,115,80,124,10.9,1.2,No,ICU-A,Dr. Nguyen
+P00106,2023-08-31,37.6,95,98,74,3.4,-0.8,No,Ward-X,Dr. Mensah
+P00107,2023-06-03,39.8,115,66,67,9.1,1.3,No,ICU-A,Dr. Mensah
+P00108,2023-02-12,37.3,109,60,100,3.3,2.2,No,Ward-X,Dr. Adebayo
+P00109,2023-02-19,37.4,121,54,74,4.8,0.3,No,ICU-B,Dr. Rodriguez
+P00110,2023-05-15,36.9,98,93,104,13.7,2.0,No,ICU-A,Dr. Nguyen
+P00111,2023-12-07,34.1,125,83,93,6.3,1.8,No,ICU-B,Dr. Patel
+P00112,2023-06-06,37.0,146,74,50,7.8,2.4,No,ICU-B,Dr. Mensah
+P00113,2023-02-22,37.1,113,78,127,10.0,1.9,No,Ward-X,Dr. Mensah
+P00114,2023-11-23,40.7,123,61,133,8.7,0.8,No,Ward-X,Dr. Nguyen
+P00115,2023-08-02,36.7,129,104,73,7.5,3.0,No,Ward-X,Dr. Rodriguez
+P00116,2023-09-03,37.5,107,77,78,8.3,1.6,No,ICU-A,Dr. Mensah
+P00117,2023-10-23,36.9,119,76,95,15.4,1.8,No,ER,Dr. Nguyen
+P00118,2023-08-13,35.2,115,84,96,6.8,0.9,No,Ward-X,Dr. Adebayo
+P00119,2023-03-03,38.7,117,81,104,7.7,1.4,No,Ward-X,Dr. Rodriguez
+P00120,2023-12-27,38.1,100,78,138,10.7,0.9,No,ICU-A,Dr. Patel
+P00121,2023-02-12,38.2,115,66,84,10.9,1.6,No,Ward-X,Dr. Mensah
+P00122,2023-04-19,35.6,125,81,68,11.2,3.5,No,ICU-A,Dr. Nguyen
+P00123,2023-07-17,39.1,144,98,54,9.2,0.4,No,ICU-B,Dr. Adebayo
+P00124,2023-01-28,34.9,134,91,70,3.0,0.2,No,Ward-X,Dr. Patel
+P00125,2023-11-18,37.9,158,94,87,12.7,3.3,No,Ward-X,Dr. Nguyen
+P00126,2023-12-20,40.3,100,69,133,3.0,1.6,No,ICU-B,Dr. Nguyen
+P00127,2023-01-29,35.5,132,63,75,8.1,1.1,No,ICU-B,Dr. Patel
+P00128,2023-04-05,36.2,119,73,94,4.4,2.8,No,ICU-B,Dr. Adebayo
+P00129,2023-05-11,37.1,159,76,88,6.8,1.2,No,Ward-X,Dr. Adebayo
+P00130,2023-08-24,36.2,99,88,118,8.2,3.6,No,ER,Dr. Rodriguez
+P00131,2023-11-15,34.7,98,55,151,8.1,2.5,No,ER,Dr. Mensah
+P00132,2023-03-12,37.1,103,93,75,8.5,1.3,No,ER,Dr. Patel
+P00133,2023-04-06,35.4,73,73,76,12.6,4.0,No,Ward-X,Dr. Patel
+P00134,2023-11-03,37.7,104,70,114,8.6,1.2,No,ICU-B,Dr. Patel
+P00135,2023-11-27,35.6,100,63,105,6.1,2.5,No,Ward-X,Dr. Adebayo
+P00136,2023-05-18,39.3,118,55,134,10.4,2.1,No,ICU-B,Dr. Mensah
+P00137,2023-12-07,35.8,122,85,103,11.2,3.1,No,Ward-X,Dr. Rodriguez
+P00138,2023-12-21,36.5,153,76,79,2.7,3.4,No,Ward-X,Dr. Nguyen
+P00139,2023-04-15,38.2,134,60,103,9.1,1.8,No,ICU-B,Dr. Nguyen
+P00140,2023-07-31,35.2,103,59,116,9.5,1.0,No,ER,Dr. Patel
+P00141,2023-12-06,37.3,97,71,109,6.0,2.3,No,ICU-B,Dr. Mensah
+P00142,2023-03-14,39.0,125,95,101,11.8,1.1,No,ICU-A,Dr. Adebayo
+P00143,2023-09-16,34.6,89,72,115,6.5,3.8,No,ICU-A,Dr. Mensah
+P00144,2023-09-01,37.3,152,57,117,7.4,1.9,No,ICU-B,Dr. Mensah
+P00145,2023-03-08,37.4,139,72,123,6.4,1.4,No,Ward-X,Dr. Adebayo
+P00146,2023-11-20,38.2,106,72,104,7.1,2.0,No,ICU-A,Dr. Patel
+P00147,2023-08-12,35.1,81,43,84,3.2,0.5,No,ICU-A,Dr. Mensah
+P00148,2023-02-24,35.0,142,74,92,2.0,0.8,No,Ward-X,Dr. Nguyen
+P00149,2023-05-09,37.8,113,72,118,12.6,3.0,No,Ward-X,Dr. Adebayo
+P00150,2023-06-13,37.4,140,83,68,4.0,1.1,No,ER,Dr. Rodriguez
+P00151,2023-09-08,37.4,83,97,97,3.5,0.8,No,Ward-X,Dr. Patel
+P00152,2023-04-15,37.5,103,89,78,-0.5,2.3,No,ICU-B,Dr. Adebayo
+P00153,2023-02-13,36.0,115,72,89,4.8,3.0,No,ICU-B,Dr. Rodriguez
+P00154,2023-02-15,37.3,116,62,120,2.4,2.5,No,ER,Dr. Rodriguez
+P00155,2023-08-20,37.4,106,106,93,12.7,2.8,No,ICU-A,Dr. Mensah
+P00156,2024-01-01,35.9,127,76,89,10.5,1.0,No,ICU-A,Dr. Mensah
+P00157,2023-08-10,39.8,94,75,54,4.6,0.4,No,Ward-X,Dr. Mensah
+P00158,2023-07-17,37.7,112,75,107,14.9,3.3,No,ICU-B,Dr. Adebayo
+P00159,2023-09-08,35.2,117,77,104,10.4,1.5,No,ICU-A,Dr. Adebayo
+P00160,2023-11-05,38.0,125,73,142,5.9,1.5,No,ER,Dr. Patel
+P00161,2023-12-18,35.5,129,68,80,-1.7,3.1,No,ER,Dr. Mensah
+P00162,2023-06-04,38.2,93,68,93,15.0,2.4,No,ICU-B,Dr. Rodriguez
+P00163,2023-09-02,38.7,84,75,94,2.1,2.3,No,ER,Dr. Nguyen
+P00164,2023-03-14,35.8,141,68,127,1.2,4.0,No,ER,Dr. Patel
+P00165,2023-02-16,38.4,122,66,86,10.6,1.2,No,ICU-B,Dr. Adebayo
+P00166,2023-10-30,37.6,100,76,95,15.5,2.7,No,Ward-X,Dr. Patel
+P00167,2023-11-08,38.2,146,72,103,11.8,1.9,No,Ward-X,Dr. Patel
+P00168,2023-01-28,39.8,117,93,93,9.0,2.1,No,ER,Dr. Patel
+P00169,2023-06-26,36.6,139,43,77,9.1,3.3,No,Ward-X,Dr. Patel
+P00170,2023-08-24,35.9,116,88,93,10.0,2.3,No,Ward-X,Dr. Nguyen
+P00171,2023-10-19,35.7,156,90,115,9.7,2.3,No,ER,Dr. Mensah
+P00172,2023-09-25,35.8,150,50,62,8.0,2.9,No,Ward-X,Dr. Rodriguez
+P00173,2023-09-23,36.9,110,71,91,7.4,1.4,No,ER,Dr. Patel
+P00174,2023-04-05,37.5,134,71,70,6.8,1.0,No,ICU-A,Dr. Patel
+P00175,2023-12-12,37.4,128,58,118,4.4,0.8,No,ICU-B,Dr. Patel
+P00176,2023-01-25,38.2,142,66,50,6.0,-0.2,No,ICU-B,Dr. Mensah
+P00177,2023-03-02,37.0,96,62,74,1.1,3.9,No,Ward-X,Dr. Adebayo
+P00178,2023-02-12,39.2,129,96,97,6.7,0.7,No,Ward-X,Dr. Adebayo
+P00179,2023-05-16,36.6,136,86,127,3.5,1.6,No,Ward-X,Dr. Nguyen
+P00180,2023-11-23,41.1,80,90,86,3.1,1.5,No,ICU-B,Dr. Adebayo
+P00181,2023-10-24,37.9,91,84,74,7.6,2.1,No,ICU-A,Dr. Patel
+P00182,2023-12-24,35.7,74,61,135,11.9,2.6,No,ICU-A,Dr. Patel
+P00183,2023-01-13,35.4,110,69,52,10.2,2.7,No,ICU-B,Dr. Patel
+P00184,2023-07-10,37.7,129,81,33,1.5,1.2,No,ICU-A,Dr. Nguyen
+P00185,2023-05-15,36.7,145,60,99,3.5,1.6,No,ICU-B,Dr. Patel
+P00186,2023-09-20,38.1,116,84,75,10.3,2.1,No,ICU-A,Dr. Adebayo
+P00187,2023-10-03,37.7,148,72,62,3.6,1.6,No,ER,Dr. Mensah
+P00188,2023-04-06,36.9,87,71,106,6.2,3.4,No,ER,Dr. Mensah
+P00189,2023-10-05,35.7,81,84,94,8.9,2.3,No,ICU-B,Dr. Rodriguez
+P00190,2023-11-20,34.7,114,80,74,3.6,2.5,No,ICU-A,Dr. Adebayo
+P00191,2023-08-29,36.3,123,71,56,7.4,2.5,No,Ward-X,Dr. Patel
+P00192,2023-09-16,38.3,114,89,110,2.3,3.0,No,ICU-A,Dr. Mensah
+P00193,2023-08-24,37.3,74,62,104,4.9,2.0,No,ER,Dr. Adebayo
+P00194,2023-07-08,35.1,113,82,86,8.1,0.5,No,ER,Dr. Mensah
+P00195,2023-03-14,37.3,89,82,134,1.4,2.2,No,ICU-A,Dr. Patel
+P00196,2023-08-10,37.6,128,71,61,8.5,1.1,No,ICU-A,Dr. Mensah
+P00197,2023-07-28,35.7,122,79,50,6.9,1.3,No,Ward-X,Dr. Rodriguez
+P00198,2023-05-03,37.2,96,60,71,8.9,2.4,No,Ward-X,Dr. Rodriguez
+P00199,2023-06-20,37.1,105,86,87,7.8,3.0,No,ICU-A,Dr. Mensah
+P00200,2023-02-01,35.3,94,73,94,11.8,1.8,No,ICU-A,Dr. Adebayo
+P00201,2023-11-25,37.5,114,69,82,7.4,2.1,No,ICU-A,Dr. Adebayo
+P00202,2023-01-18,37.8,134,88,97,5.5,3.5,No,ICU-A,Dr. Adebayo
+P00203,2023-07-04,38.6,95,67,57,7.4,2.0,No,ICU-B,Dr. Mensah
+P00204,2023-02-25,38.6,125,58,124,8.9,4.4,No,ICU-A,Dr. Adebayo
+P00205,2023-08-06,34.9,104,56,86,7.2,2.4,No,Ward-X,Dr. Patel
+P00206,2023-06-12,35.6,99,82,116,7.1,0.0,No,ER,Dr. Rodriguez
+P00207,2023-04-12,37.8,113,60,97,4.5,2.6,No,ICU-B,Dr. Patel
+P00208,2023-08-02,37.8,94,96,99,4.7,2.2,No,ICU-A,Dr. Adebayo
+P00209,2023-03-25,37.8,104,50,102,2.1,3.1,No,ER,Dr. Patel
+P00210,2023-05-31,42.8,91,95,99,13.1,2.5,No,ICU-B,Dr. Adebayo
+P00211,2023-09-06,37.9,154,78,104,2.6,1.7,No,ER,Dr. Mensah
+P00212,2023-12-25,38.7,116,74,121,4.6,0.6,No,ICU-A,Dr. Patel
+P00213,2023-08-09,38.4,101,68,93,4.5,1.6,No,ICU-A,Dr. Mensah
+P00214,2023-10-01,38.0,119,80,106,10.1,0.9,No,Ward-X,Dr. Mensah
+P00215,2023-10-11,36.5,113,75,86,6.0,1.2,No,ICU-A,Dr. Nguyen
+P00216,2023-01-26,38.1,111,88,124,11.4,2.4,No,ICU-A,Dr. Adebayo
+P00217,2023-08-11,35.8,127,76,71,4.6,3.5,No,ICU-B,Dr. Rodriguez
+P00218,2023-12-19,36.6,130,77,133,8.0,2.2,No,Ward-X,Dr. Adebayo
+P00219,2023-07-11,36.3,104,71,87,4.1,0.6,No,ICU-B,Dr. Rodriguez
+P00220,2023-07-30,37.1,103,74,52,14.5,2.2,No,ER,Dr. Adebayo
+P00221,2023-06-23,40.5,109,79,91,2.8,3.0,No,ICU-A,Dr. Mensah
+P00222,2023-03-17,34.2,69,54,71,8.1,1.2,No,ER,Dr. Patel
+P00223,2023-05-29,38.0,85,59,109,9.2,1.7,No,ICU-B,Dr. Patel
+P00224,2023-12-20,34.6,142,84,72,8.4,1.8,No,ICU-A,Dr. Nguyen
+P00225,2023-06-11,36.3,148,77,77,6.4,1.0,No,ICU-A,Dr. Rodriguez
+P00226,2023-11-25,38.6,110,73,41,6.5,2.4,No,ICU-B,Dr. Rodriguez
+P00227,2023-04-01,37.1,127,75,77,7.2,1.7,No,ICU-B,Dr. Rodriguez
+P00228,2023-06-17,35.4,121,79,27,6.5,2.2,No,ICU-B,Dr. Mensah
+P00229,2023-05-10,35.9,177,69,48,10.4,0.9,No,ICU-B,Dr. Rodriguez
+P00230,2023-09-23,38.0,137,66,107,14.7,1.4,No,ICU-B,Dr. Patel
+P00231,2023-12-01,35.9,112,77,108,5.0,2.5,No,ICU-A,Dr. Mensah
+P00232,2023-01-10,37.3,96,63,99,2.2,1.4,No,ICU-B,Dr. Adebayo
+P00233,2023-05-15,37.1,83,80,64,6.7,3.5,No,ICU-A,Dr. Rodriguez
+P00234,2023-07-06,36.0,119,55,87,16.0,1.4,No,ICU-A,Dr. Rodriguez
+P00235,2023-01-11,40.2,100,87,88,4.2,2.0,No,ICU-B,Dr. Adebayo
+P00236,2023-12-26,38.0,87,81,59,12.7,2.7,No,ICU-B,Dr. Rodriguez
+P00237,2023-03-31,34.0,102,78,126,12.9,0.4,No,Ward-X,Dr. Adebayo
+P00238,2023-06-01,37.3,93,87,110,5.1,0.0,No,ICU-A,Dr. Mensah
+P00239,2023-02-25,36.0,149,95,82,9.0,0.3,No,ICU-B,Dr. Patel
+P00240,2023-10-26,38.3,133,87,89,12.7,3.1,No,ICU-B,Dr. Adebayo
+P00241,2023-07-24,35.8,115,53,93,5.7,1.2,No,ICU-B,Dr. Nguyen
+P00242,2023-02-01,36.8,145,60,37,6.3,4.4,No,Ward-X,Dr. Adebayo
+P00243,2023-07-13,37.8,117,68,82,5.0,1.2,No,Ward-X,Dr. Rodriguez
+P00244,2023-06-25,38.3,98,75,71,3.4,2.0,No,ER,Dr. Mensah
+P00245,2023-03-18,35.2,145,81,63,4.7,3.3,No,ICU-A,Dr. Mensah
+P00246,2023-08-22,36.5,126,66,81,2.7,3.8,No,ER,Dr. Adebayo
+P00247,2023-10-22,36.3,94,77,133,7.1,3.9,No,ICU-B,Dr. Patel
+P00248,2023-05-23,36.0,111,66,104,4.3,3.0,No,Ward-X,Dr. Nguyen
+P00249,2023-12-24,39.6,97,68,74,7.8,2.8,No,Ward-X,Dr. Mensah
+P00250,2023-01-20,37.6,87,58,102,1.6,2.4,No,ER,Dr. Rodriguez`, LOG_CSV=`case_id,activity,timestamp
+P00001,ER Registration,2023-06-26 16:54:00
+P00001,ER Triage,2023-06-26 17:06:00
+P00001,Lab Tests,2023-06-26 17:43:00
+P00001,Doctor Review,2023-06-26 18:31:00
+P00001,Observation,2023-06-26 22:09:00
+P00001,Discharge,2023-06-27 02:53:00
+P00002,ER Registration,2023-02-12 17:32:00
+P00002,ER Triage,2023-02-12 17:54:00
+P00002,ER Sepsis Triage,2023-02-12 18:01:00
+P00002,Lab Tests,2023-02-12 18:23:00
+P00002,Doctor Review,2023-02-12 19:05:00
+P00002,IV Antibiotics,2023-02-12 19:29:00
+P00002,Ward Admission,2023-02-12 22:08:00
+P00002,Discharge,2023-02-13 02:56:00
+P00003,ER Registration,2023-01-28 15:34:00
+P00003,ER Triage,2023-01-28 15:45:00
+P00003,Lab Tests,2023-01-28 16:49:00
+P00003,Doctor Review,2023-01-28 17:32:00
+P00003,Ward Admission,2023-01-28 19:56:00
+P00003,Discharge,2023-01-29 08:59:00
+P00004,ER Registration,2023-05-10 10:44:00
+P00004,ER Triage,2023-05-10 10:52:00
+P00004,ER Sepsis Triage,2023-05-10 11:02:00
+P00004,Lab Tests,2023-05-10 11:43:00
+P00004,Doctor Review,2023-05-10 12:25:00
+P00004,IV Antibiotics,2023-05-10 13:23:00
+P00004,Observation,2023-05-10 15:19:00
+P00004,Discharge,2023-05-11 01:17:00
+P00005,ER Registration,2023-08-30 07:34:00
+P00005,ER Triage,2023-08-30 07:51:00
+P00005,ER Sepsis Triage,2023-08-30 07:59:00
+P00005,Lab Tests,2023-08-30 08:41:00
+P00005,Doctor Review,2023-08-30 09:01:00
+P00005,IV Antibiotics,2023-08-30 09:57:00
+P00005,Ward Admission,2023-08-30 12:24:00
+P00005,Discharge,2023-09-01 04:00:00
+P00006,ER Registration,2023-06-05 08:07:00
+P00006,ER Triage,2023-06-05 08:34:00
+P00006,Lab Tests,2023-06-05 09:12:00
+P00006,Doctor Review,2023-06-05 10:13:00
+P00006,Observation,2023-06-05 13:10:00
+P00006,Discharge,2023-06-05 19:26:00
+P00007,ER Registration,2023-02-06 18:01:00
+P00007,ER Triage,2023-02-06 18:08:00
+P00007,ER Sepsis Triage,2023-02-06 18:14:00
+P00007,Lab Tests,2023-02-06 19:23:00
+P00007,Doctor Review,2023-02-06 19:48:00
+P00007,IV Antibiotics,2023-02-06 20:12:00
+P00007,Ward Admission,2023-02-06 22:19:00
+P00007,Discharge,2023-02-07 20:17:00
+P00008,ER Registration,2023-09-17 13:44:00
+P00008,ER Triage,2023-09-17 14:24:00
+P00008,Lab Tests,2023-09-17 14:54:00
+P00008,Doctor Review,2023-09-17 15:55:00
+P00008,Observation,2023-09-17 19:16:00
+P00008,Discharge,2023-09-18 02:49:00
+P00009,ER Registration,2023-06-29 17:58:00
+P00009,ER Triage,2023-06-29 18:23:00
+P00009,Lab Tests,2023-06-29 19:23:00
+P00009,Doctor Review,2023-06-29 20:09:00
+P00009,Ward Admission,2023-06-29 21:20:00
+P00009,Discharge,2023-06-30 08:13:00
+P00010,ER Registration,2023-05-19 12:28:00
+P00010,ER Triage,2023-05-19 12:41:00
+P00010,Doctor Review,2023-05-19 14:50:00
+P00010,Ward Admission,2023-05-19 16:16:00
+P00010,Discharge,2023-05-20 06:57:00
+P00011,ER Registration,2023-05-08 11:32:00
+P00011,ER Triage,2023-05-08 11:38:00
+P00011,Lab Tests,2023-05-08 12:00:00
+P00011,Doctor Review,2023-05-08 13:39:00
+P00011,Ward Admission,2023-05-08 15:17:00
+P00011,Discharge,2023-05-08 19:24:00
+P00012,ER Registration,2023-08-05 09:36:00
+P00012,ER Triage,2023-08-05 09:59:00
+P00012,Lab Tests,2023-08-05 10:39:00
+P00012,Doctor Review,2023-08-05 11:57:00
+P00012,Ward Admission,2023-08-05 14:08:00
+P00012,Discharge,2023-08-06 04:06:00
+P00013,ER Registration,2023-12-03 13:49:00
+P00013,ER Triage,2023-12-03 13:58:00
+P00013,Lab Tests,2023-12-03 14:33:00
+P00013,Doctor Review,2023-12-03 16:37:00
+P00013,Ward Admission,2023-12-03 18:14:00
+P00013,Discharge,2023-12-04 07:12:00
+P00014,ER Registration,2023-06-16 13:18:00
+P00014,ER Triage,2023-06-16 13:41:00
+P00014,Lab Tests,2023-06-16 14:15:00
+P00014,Ward Admission,2023-06-16 15:20:00
+P00014,Discharge,2023-06-17 03:01:00
+P00015,ER Registration,2023-10-27 14:25:00
+P00015,ER Triage,2023-10-27 14:32:00
+P00015,Lab Tests,2023-10-27 14:59:00
+P00015,Doctor Review,2023-10-27 15:34:00
+P00015,Ward Admission,2023-10-27 19:26:00
+P00015,Discharge,2023-10-28 10:02:00
+P00016,ER Registration,2023-04-18 13:12:00
+P00016,ER Triage,2023-04-18 13:36:00
+P00016,Lab Tests,2023-04-18 14:20:00
+P00016,Doctor Review,2023-04-18 15:34:00
+P00016,Ward Admission,2023-04-18 18:19:00
+P00016,Discharge,2023-04-19 01:36:00
+P00017,ER Registration,2023-07-16 15:26:00
+P00017,ER Triage,2023-07-16 15:34:00
+P00017,Lab Tests,2023-07-16 16:01:00
+P00017,Doctor Review,2023-07-16 17:24:00
+P00017,Observation,2023-07-16 21:06:00
+P00017,Discharge,2023-07-17 04:39:00
+P00018,ER Registration,2023-12-09 19:07:00
+P00018,ER Triage,2023-12-09 19:32:00
+P00018,Lab Tests,2023-12-09 20:10:00
+P00018,Doctor Review,2023-12-09 21:23:00
+P00018,Ward Admission,2023-12-09 21:53:00
+P00018,Discharge,2023-12-10 05:22:00
+P00019,ER Registration,2023-02-10 14:32:00
+P00019,ER Triage,2023-02-10 14:42:00
+P00019,Lab Tests,2023-02-10 15:08:00
+P00019,Doctor Review,2023-02-10 16:27:00
+P00019,Ward Admission,2023-02-10 19:40:00
+P00019,Discharge,2023-02-11 07:19:00
+P00020,ER Registration,2023-02-08 16:23:00
+P00020,ER Triage,2023-02-08 16:40:00
+P00020,ER Sepsis Triage,2023-02-08 16:49:00
+P00020,Lab Tests,2023-02-08 17:19:00
+P00020,Doctor Review,2023-02-08 18:41:00
+P00020,IV Antibiotics,2023-02-08 18:51:00
+P00020,Observation,2023-02-08 21:54:00
+P00020,Discharge,2023-02-09 23:01:00
+P00021,ER Registration,2023-05-06 14:20:00
+P00021,ER Triage,2023-05-06 14:25:00
+P00021,ER Sepsis Triage,2023-05-06 14:33:00
+P00021,Doctor Review,2023-05-06 15:27:00
+P00021,IV Antibiotics,2023-05-06 15:52:00
+P00021,Ward Admission,2023-05-06 16:36:00
+P00021,Discharge,2023-05-07 12:02:00
+P00022,ER Registration,2023-03-09 15:40:00
+P00022,ER Triage,2023-03-09 15:47:00
+P00022,Lab Tests,2023-03-09 16:38:00
+P00022,Doctor Review,2023-03-09 18:01:00
+P00022,Ward Admission,2023-03-09 21:47:00
+P00022,Discharge,2023-03-10 02:55:00
+P00023,ER Registration,2023-12-29 08:11:00
+P00023,ER Triage,2023-12-29 08:31:00
+P00023,Doctor Review,2023-12-29 09:53:00
+P00023,Ward Admission,2023-12-29 12:58:00
+P00023,Discharge,2023-12-29 23:11:00
+P00024,ER Registration,2023-01-06 09:36:00
+P00024,ER Triage,2023-01-06 09:58:00
+P00024,Lab Tests,2023-01-06 11:02:00
+P00024,Doctor Review,2023-01-06 11:56:00
+P00024,Ward Admission,2023-01-06 14:08:00
+P00024,Discharge,2023-01-07 04:35:00
+P00025,ER Registration,2023-10-17 17:05:00
+P00025,ER Triage,2023-10-17 17:30:00
+P00025,ER Sepsis Triage,2023-10-17 17:49:00
+P00025,Lab Tests,2023-10-17 18:37:00
+P00025,Doctor Review,2023-10-17 19:41:00
+P00025,IV Antibiotics,2023-10-17 19:55:00
+P00025,Observation,2023-10-17 21:51:00
+P00025,Discharge,2023-10-18 02:17:00
+P00026,ER Registration,2023-01-22 16:02:00
+P00026,ER Triage,2023-01-22 16:24:00
+P00026,Lab Tests,2023-01-22 16:58:00
+P00026,Doctor Review,2023-01-22 17:20:00
+P00026,Ward Admission,2023-01-22 18:48:00
+P00026,Discharge,2023-01-22 22:57:00
+P00027,ER Registration,2023-10-21 06:32:00
+P00027,ER Triage,2023-10-21 06:56:00
+P00027,ER Sepsis Triage,2023-10-21 07:03:00
+P00027,Lab Tests,2023-10-21 07:40:00
+P00027,Doctor Review,2023-10-21 08:22:00
+P00027,IV Antibiotics,2023-10-21 09:06:00
+P00027,Lab Tests,2023-10-21 10:35:00
+P00027,Doctor Review,2023-10-21 11:51:00
+P00027,Observation,2023-10-21 14:47:00
+P00027,Discharge,2023-10-23 02:03:00
+P00028,ER Registration,2023-10-15 10:08:00
+P00028,ER Triage,2023-10-15 10:28:00
+P00028,Lab Tests,2023-10-15 11:00:00
+P00028,Doctor Review,2023-10-15 12:45:00
+P00028,Ward Admission,2023-10-15 14:45:00
+P00028,Discharge,2023-10-16 00:58:00
+P00029,ER Registration,2023-07-31 13:00:00
+P00029,ER Triage,2023-07-31 13:19:00
+P00029,Lab Tests,2023-07-31 13:42:00
+P00029,Doctor Review,2023-07-31 14:09:00
+P00029,Ward Admission,2023-07-31 14:54:00
+P00029,Discharge,2023-08-01 00:46:00
+P00030,ER Registration,2023-01-07 18:25:00
+P00030,ER Triage,2023-01-07 18:49:00
+P00030,Lab Tests,2023-01-07 19:15:00
+P00030,Doctor Review,2023-01-07 20:13:00
+P00030,Observation,2023-01-07 23:00:00
+P00030,Discharge,2023-01-08 09:39:00
+P00031,ER Registration,2023-06-17 08:23:00
+P00031,ER Triage,2023-06-17 08:41:00
+P00031,Lab Tests,2023-06-17 09:30:00
+P00031,Doctor Review,2023-06-17 09:54:00
+P00031,Ward Admission,2023-06-17 12:17:00
+P00031,Discharge,2023-06-18 00:40:00
+P00032,ER Registration,2023-03-16 07:40:00
+P00032,ER Triage,2023-03-16 07:46:00
+P00032,ER Sepsis Triage,2023-03-16 07:51:00
+P00032,Doctor Review,2023-03-16 08:36:00
+P00032,IV Antibiotics,2023-03-16 08:56:00
+P00032,Ward Admission,2023-03-16 11:10:00
+P00032,Discharge,2023-03-17 23:19:00
+P00033,ER Registration,2023-03-08 14:12:00
+P00033,ER Triage,2023-03-08 14:29:00
+P00033,Lab Tests,2023-03-08 14:52:00
+P00033,Doctor Review,2023-03-08 15:07:00
+P00033,Observation,2023-03-08 17:16:00
+P00033,Discharge,2023-03-09 00:47:00
+P00034,ER Registration,2023-10-01 19:22:00
+P00034,ER Triage,2023-10-01 19:41:00
+P00034,ER Sepsis Triage,2023-10-01 19:55:00
+P00034,Lab Tests,2023-10-01 21:01:00
+P00034,Doctor Review,2023-10-01 22:27:00
+P00034,IV Antibiotics,2023-10-01 23:19:00
+P00034,Ward Admission,2023-10-02 02:52:00
+P00034,Discharge,2023-10-03 15:05:00
+P00035,ER Registration,2023-11-06 08:38:00
+P00035,ER Triage,2023-11-06 08:55:00
+P00035,Lab Tests,2023-11-06 09:18:00
+P00035,Doctor Review,2023-11-06 10:42:00
+P00035,Observation,2023-11-06 11:27:00
+P00035,Discharge,2023-11-06 19:48:00
+P00036,ER Registration,2023-04-21 06:58:00
+P00036,ER Triage,2023-04-21 07:07:00
+P00036,Lab Tests,2023-04-21 07:59:00
+P00036,Observation,2023-04-21 10:44:00
+P00036,Discharge,2023-04-21 16:25:00
+P00037,ER Registration,2023-07-14 06:58:00
+P00037,ER Triage,2023-07-14 07:31:00
+P00037,Lab Tests,2023-07-14 08:02:00
+P00037,Doctor Review,2023-07-14 08:25:00
+P00037,Observation,2023-07-14 11:47:00
+P00037,Discharge,2023-07-14 18:47:00
+P00038,ER Registration,2023-10-11 12:53:00
+P00038,ER Triage,2023-10-11 13:01:00
+P00038,Doctor Review,2023-10-11 14:30:00
+P00038,Ward Admission,2023-10-11 17:32:00
+P00038,Discharge,2023-10-11 21:12:00
+P00039,ER Registration,2023-09-29 16:34:00
+P00039,ER Triage,2023-09-29 16:41:00
+P00039,Lab Tests,2023-09-29 17:38:00
+P00039,Doctor Review,2023-09-29 19:00:00
+P00039,Ward Admission,2023-09-29 20:36:00
+P00039,Discharge,2023-09-30 03:05:00
+P00040,ER Registration,2023-04-19 17:25:00
+P00040,ER Triage,2023-04-19 17:40:00
+P00040,Lab Tests,2023-04-19 18:25:00
+P00040,Doctor Review,2023-04-19 19:18:00
+P00040,Ward Admission,2023-04-19 21:45:00
+P00040,Discharge,2023-04-20 06:08:00
+P00041,ER Registration,2023-08-07 18:49:00
+P00041,ER Triage,2023-08-07 18:56:00
+P00041,Lab Tests,2023-08-07 19:55:00
+P00041,Ward Admission,2023-08-07 20:50:00
+P00041,Discharge,2023-08-08 01:05:00
+P00042,ER Registration,2023-08-03 15:10:00
+P00042,ER Triage,2023-08-03 15:21:00
+P00042,ER Sepsis Triage,2023-08-03 15:34:00
+P00042,Lab Tests,2023-08-03 16:16:00
+P00042,Doctor Review,2023-08-03 17:25:00
+P00042,IV Antibiotics,2023-08-03 17:58:00
+P00042,Lab Tests,2023-08-03 18:56:00
+P00042,Doctor Review,2023-08-03 20:09:00
+P00042,Ward Admission,2023-08-03 22:58:00
+P00042,Discharge,2023-08-04 22:37:00
+P00043,ER Registration,2023-10-28 16:26:00
+P00043,ER Triage,2023-10-28 16:51:00
+P00043,Lab Tests,2023-10-28 17:53:00
+P00043,Doctor Review,2023-10-28 18:46:00
+P00043,Ward Admission,2023-10-28 22:05:00
+P00043,Discharge,2023-10-29 02:51:00
+P00044,ER Registration,2023-01-27 08:17:00
+P00044,ER Triage,2023-01-27 08:30:00
+P00044,ER Sepsis Triage,2023-01-27 08:38:00
+P00044,Lab Tests,2023-01-27 09:45:00
+P00044,Doctor Review,2023-01-27 10:58:00
+P00044,IV Antibiotics,2023-01-27 11:26:00
+P00044,Ward Admission,2023-01-27 14:30:00
+P00044,Discharge,2023-01-28 07:52:00
+P00045,ER Registration,2023-08-21 18:14:00
+P00045,ER Triage,2023-08-21 18:29:00
+P00045,Lab Tests,2023-08-21 19:29:00
+P00045,Doctor Review,2023-08-21 20:48:00
+P00045,Ward Admission,2023-08-21 23:23:00
+P00045,Discharge,2023-08-22 06:40:00
+P00046,ER Registration,2023-08-21 06:52:00
+P00046,ER Triage,2023-08-21 06:59:00
+P00046,Lab Tests,2023-08-21 07:36:00
+P00046,Doctor Review,2023-08-21 08:33:00
+P00046,Ward Admission,2023-08-21 12:20:00
+P00046,Discharge,2023-08-21 17:33:00
+P00047,ER Registration,2023-05-14 16:52:00
+P00047,ER Triage,2023-05-14 17:05:00
+P00047,ER Sepsis Triage,2023-05-14 17:15:00
+P00047,Lab Tests,2023-05-14 18:10:00
+P00047,Doctor Review,2023-05-14 19:36:00
+P00047,IV Antibiotics,2023-05-14 19:46:00
+P00047,Ward Admission,2023-05-14 20:44:00
+P00047,Discharge,2023-05-15 04:52:00
+P00048,ER Registration,2023-11-02 17:47:00
+P00048,ER Triage,2023-11-02 18:01:00
+P00048,ER Sepsis Triage,2023-11-02 18:07:00
+P00048,Lab Tests,2023-11-02 19:04:00
+P00048,Doctor Review,2023-11-02 20:14:00
+P00048,IV Antibiotics,2023-11-02 20:32:00
+P00048,Observation,2023-11-02 21:12:00
+P00048,Discharge,2023-11-03 21:14:00
+P00049,ER Registration,2023-11-15 12:13:00
+P00049,ER Triage,2023-11-15 12:22:00
+P00049,Lab Tests,2023-11-15 12:55:00
+P00049,Doctor Review,2023-11-15 13:23:00
+P00049,Observation,2023-11-15 15:23:00
+P00049,Discharge,2023-11-16 03:56:00
+P00050,ER Registration,2023-11-21 12:56:00
+P00050,ER Triage,2023-11-21 13:34:00
+P00050,Lab Tests,2023-11-21 14:09:00
+P00050,Doctor Review,2023-11-21 15:04:00
+P00050,Observation,2023-11-21 17:19:00
+P00050,Discharge,2023-11-21 20:44:00
+P00051,ER Registration,2023-01-14 09:03:00
+P00051,ER Triage,2023-01-14 09:18:00
+P00051,Lab Tests,2023-01-14 10:04:00
+P00051,Doctor Review,2023-01-14 11:13:00
+P00051,Ward Admission,2023-01-14 12:51:00
+P00051,Discharge,2023-01-14 18:34:00
+P00052,ER Registration,2023-08-03 19:26:00
+P00052,ER Triage,2023-08-03 19:38:00
+P00052,ER Sepsis Triage,2023-08-03 19:55:00
+P00052,Lab Tests,2023-08-03 20:45:00
+P00052,Doctor Review,2023-08-03 22:34:00
+P00052,IV Antibiotics,2023-08-03 23:06:00
+P00052,Observation,2023-08-04 00:54:00
+P00052,Discharge,2023-08-04 19:26:00
+P00053,ER Registration,2023-08-11 09:48:00
+P00053,ER Triage,2023-08-11 09:53:00
+P00053,Lab Tests,2023-08-11 10:38:00
+P00053,Doctor Review,2023-08-11 11:01:00
+P00053,Ward Admission,2023-08-11 14:48:00
+P00053,Discharge,2023-08-11 22:33:00
+P00054,ER Registration,2023-08-19 11:59:00
+P00054,ER Triage,2023-08-19 12:24:00
+P00054,Lab Tests,2023-08-19 13:27:00
+P00054,Ward Admission,2023-08-19 16:14:00
+P00054,Discharge,2023-08-20 00:53:00
+P00055,ER Registration,2023-08-07 06:28:00
+P00055,ER Triage,2023-08-07 06:40:00
+P00055,ER Sepsis Triage,2023-08-07 06:53:00
+P00055,Lab Tests,2023-08-07 07:29:00
+P00055,Doctor Review,2023-08-07 08:39:00
+P00055,IV Antibiotics,2023-08-07 09:11:00
+P00055,Observation,2023-08-07 12:47:00
+P00055,Discharge,2023-08-08 13:11:00
+P00056,ER Registration,2023-01-04 13:26:00
+P00056,ER Triage,2023-01-04 14:04:00
+P00056,Doctor Review,2023-01-04 15:32:00
+P00056,Observation,2023-01-04 16:50:00
+P00056,Discharge,2023-01-05 00:10:00
+P00057,ER Registration,2023-11-03 06:45:00
+P00057,ER Triage,2023-11-03 07:03:00
+P00057,Lab Tests,2023-11-03 07:57:00
+P00057,Doctor Review,2023-11-03 08:37:00
+P00057,Ward Admission,2023-11-03 10:40:00
+P00057,Discharge,2023-11-03 21:01:00
+P00058,ER Registration,2023-03-04 07:11:00
+P00058,ER Triage,2023-03-04 07:26:00
+P00058,Lab Tests,2023-03-04 08:28:00
+P00058,Doctor Review,2023-03-04 09:21:00
+P00058,Ward Admission,2023-03-04 12:00:00
+P00058,Discharge,2023-03-04 20:16:00
+P00059,ER Registration,2023-04-14 17:22:00
+P00059,ER Triage,2023-04-14 17:40:00
+P00059,ER Sepsis Triage,2023-04-14 17:55:00
+P00059,Lab Tests,2023-04-14 18:33:00
+P00059,Doctor Review,2023-04-14 19:12:00
+P00059,IV Antibiotics,2023-04-14 19:48:00
+P00059,Ward Admission,2023-04-14 23:08:00
+P00059,Discharge,2023-04-16 04:00:00
+P00060,ER Registration,2023-09-24 17:33:00
+P00060,ER Triage,2023-09-24 17:43:00
+P00060,ER Sepsis Triage,2023-09-24 17:57:00
+P00060,Lab Tests,2023-09-24 18:17:00
+P00060,Doctor Review,2023-09-24 18:58:00
+P00060,IV Antibiotics,2023-09-24 19:35:00
+P00060,Ward Admission,2023-09-24 23:26:00
+P00060,Discharge,2023-09-26 00:25:00
+P00061,ER Registration,2023-07-25 13:56:00
+P00061,ER Triage,2023-07-25 14:15:00
+P00061,Lab Tests,2023-07-25 14:48:00
+P00061,Doctor Review,2023-07-25 15:42:00
+P00061,Ward Admission,2023-07-25 19:00:00
+P00061,Discharge,2023-07-25 23:26:00
+P00062,ER Registration,2023-03-15 10:50:00
+P00062,ER Triage,2023-03-15 11:11:00
+P00062,ER Sepsis Triage,2023-03-15 11:26:00
+P00062,Lab Tests,2023-03-15 12:34:00
+P00062,Doctor Review,2023-03-15 13:28:00
+P00062,IV Antibiotics,2023-03-15 13:52:00
+P00062,Ward Admission,2023-03-15 17:48:00
+P00062,Discharge,2023-03-16 10:23:00
+P00063,ER Registration,2023-01-07 08:30:00
+P00063,ER Triage,2023-01-07 08:35:00
+P00063,ER Sepsis Triage,2023-01-07 08:41:00
+P00063,Lab Tests,2023-01-07 09:31:00
+P00063,Doctor Review,2023-01-07 09:55:00
+P00063,IV Antibiotics,2023-01-07 10:34:00
+P00063,Lab Tests,2023-01-07 11:44:00
+P00063,Doctor Review,2023-01-07 12:40:00
+P00063,Ward Admission,2023-01-07 13:59:00
+P00063,Discharge,2023-01-08 19:11:00
+P00064,ER Registration,2023-06-19 14:26:00
+P00064,ER Triage,2023-06-19 14:43:00
+P00064,Lab Tests,2023-06-19 15:44:00
+P00064,Doctor Review,2023-06-19 16:26:00
+P00064,Ward Admission,2023-06-19 20:15:00
+P00064,Discharge,2023-06-20 06:30:00
+P00065,ER Registration,2023-07-25 09:44:00
+P00065,ER Triage,2023-07-25 09:54:00
+P00065,Lab Tests,2023-07-25 10:58:00
+P00065,Doctor Review,2023-07-25 11:19:00
+P00065,Ward Admission,2023-07-25 14:11:00
+P00065,Discharge,2023-07-25 21:26:00
+P00066,ER Registration,2023-08-28 08:04:00
+P00066,ER Triage,2023-08-28 08:34:00
+P00066,ER Sepsis Triage,2023-08-28 08:43:00
+P00066,Lab Tests,2023-08-28 09:45:00
+P00066,Doctor Review,2023-08-28 11:11:00
+P00066,IV Antibiotics,2023-08-28 11:59:00
+P00066,Observation,2023-08-28 13:50:00
+P00066,Discharge,2023-08-29 23:02:00
+P00067,ER Registration,2023-06-15 16:27:00
+P00067,ER Triage,2023-06-15 16:48:00
+P00067,Lab Tests,2023-06-15 17:43:00
+P00067,Doctor Review,2023-06-15 18:35:00
+P00067,Ward Admission,2023-06-15 22:15:00
+P00067,Discharge,2023-06-16 09:21:00
+P00068,ER Registration,2023-11-18 13:40:00
+P00068,ER Triage,2023-11-18 14:00:00
+P00068,ER Sepsis Triage,2023-11-18 14:12:00
+P00068,Lab Tests,2023-11-18 14:49:00
+P00068,Doctor Review,2023-11-18 16:10:00
+P00068,IV Antibiotics,2023-11-18 16:51:00
+P00068,Observation,2023-11-18 20:01:00
+P00068,Discharge,2023-11-19 15:20:00
+P00069,ER Registration,2023-07-07 10:41:00
+P00069,ER Triage,2023-07-07 11:00:00
+P00069,Lab Tests,2023-07-07 11:38:00
+P00069,Doctor Review,2023-07-07 12:35:00
+P00069,Ward Admission,2023-07-07 14:26:00
+P00069,Discharge,2023-07-08 02:39:00
+P00070,ER Registration,2023-04-27 07:22:00
+P00070,ER Triage,2023-04-27 07:31:00
+P00070,Lab Tests,2023-04-27 08:15:00
+P00070,Doctor Review,2023-04-27 09:18:00
+P00070,Ward Admission,2023-04-27 10:04:00
+P00070,Discharge,2023-04-27 20:08:00
+P00071,ER Registration,2023-03-22 12:57:00
+P00071,ER Triage,2023-03-22 13:12:00
+P00071,Lab Tests,2023-03-22 13:58:00
+P00071,Doctor Review,2023-03-22 15:06:00
+P00071,Ward Admission,2023-03-22 17:15:00
+P00071,Discharge,2023-03-23 06:13:00
+P00072,ER Registration,2023-04-23 17:52:00
+P00072,ER Triage,2023-04-23 17:57:00
+P00072,ER Sepsis Triage,2023-04-23 18:14:00
+P00072,Lab Tests,2023-04-23 18:56:00
+P00072,Doctor Review,2023-04-23 20:00:00
+P00072,IV Antibiotics,2023-04-23 20:36:00
+P00072,Ward Admission,2023-04-23 23:23:00
+P00072,Discharge,2023-04-24 17:26:00
+P00073,ER Registration,2023-08-30 14:19:00
+P00073,ER Triage,2023-08-30 14:31:00
+P00073,Lab Tests,2023-08-30 15:22:00
+P00073,Doctor Review,2023-08-30 16:20:00
+P00073,Ward Admission,2023-08-30 19:41:00
+P00073,Discharge,2023-08-31 10:16:00
+P00074,ER Registration,2023-09-12 19:37:00
+P00074,ER Triage,2023-09-12 19:54:00
+P00074,ER Sepsis Triage,2023-09-12 20:04:00
+P00074,Lab Tests,2023-09-12 20:32:00
+P00074,Doctor Review,2023-09-12 21:55:00
+P00074,IV Antibiotics,2023-09-12 22:06:00
+P00074,Ward Admission,2023-09-13 00:16:00
+P00074,Discharge,2023-09-13 05:07:00
+P00075,ER Registration,2023-08-25 07:25:00
+P00075,ER Triage,2023-08-25 07:50:00
+P00075,Lab Tests,2023-08-25 08:39:00
+P00075,Doctor Review,2023-08-25 09:27:00
+P00075,Ward Admission,2023-08-25 11:34:00
+P00075,Discharge,2023-08-25 20:09:00
+P00076,ER Registration,2023-02-27 09:36:00
+P00076,ER Triage,2023-02-27 10:06:00
+P00076,Lab Tests,2023-02-27 11:14:00
+P00076,Doctor Review,2023-02-27 12:04:00
+P00076,Observation,2023-02-27 15:46:00
+P00076,Discharge,2023-02-28 01:57:00
+P00077,ER Registration,2023-02-05 10:18:00
+P00077,ER Triage,2023-02-05 10:25:00
+P00077,Lab Tests,2023-02-05 11:32:00
+P00077,Doctor Review,2023-02-05 12:31:00
+P00077,Ward Admission,2023-02-05 13:58:00
+P00077,Discharge,2023-02-06 04:03:00
+P00078,ER Registration,2023-07-12 07:10:00
+P00078,ER Triage,2023-07-12 07:50:00
+P00078,Lab Tests,2023-07-12 08:11:00
+P00078,Observation,2023-07-12 09:32:00
+P00078,Discharge,2023-07-12 12:52:00
+P00079,ER Registration,2023-02-06 16:36:00
+P00079,ER Triage,2023-02-06 16:45:00
+P00079,Lab Tests,2023-02-06 17:35:00
+P00079,Doctor Review,2023-02-06 19:45:00
+P00079,Ward Admission,2023-02-06 21:10:00
+P00079,Discharge,2023-02-07 08:06:00
+P00080,ER Registration,2023-12-03 17:56:00
+P00080,ER Triage,2023-12-03 18:16:00
+P00080,Lab Tests,2023-12-03 18:46:00
+P00080,Doctor Review,2023-12-03 19:15:00
+P00080,Observation,2023-12-03 23:04:00
+P00080,Discharge,2023-12-04 04:51:00
+P00081,ER Registration,2023-01-24 11:18:00
+P00081,ER Triage,2023-01-24 11:26:00
+P00081,ER Sepsis Triage,2023-01-24 11:31:00
+P00081,Doctor Review,2023-01-24 12:34:00
+P00081,IV Antibiotics,2023-01-24 13:09:00
+P00081,Ward Admission,2023-01-24 14:29:00
+P00081,Discharge,2023-01-24 22:40:00
+P00082,ER Registration,2023-10-08 16:06:00
+P00082,ER Triage,2023-10-08 16:46:00
+P00082,ER Sepsis Triage,2023-10-08 16:58:00
+P00082,Lab Tests,2023-10-08 18:07:00
+P00082,Doctor Review,2023-10-08 18:37:00
+P00082,IV Antibiotics,2023-10-08 19:37:00
+P00082,Observation,2023-10-08 22:31:00
+P00082,Discharge,2023-10-09 04:19:00
+P00083,ER Registration,2023-06-24 11:55:00
+P00083,ER Triage,2023-06-24 12:17:00
+P00083,ER Sepsis Triage,2023-06-24 12:35:00
+P00083,Lab Tests,2023-06-24 12:59:00
+P00083,Doctor Review,2023-06-24 13:57:00
+P00083,IV Antibiotics,2023-06-24 14:07:00
+P00083,Ward Admission,2023-06-24 16:24:00
+P00083,Discharge,2023-06-26 04:51:00
+P00084,ER Registration,2023-08-09 07:48:00
+P00084,ER Triage,2023-08-09 08:06:00
+P00084,ER Sepsis Triage,2023-08-09 08:22:00
+P00084,Lab Tests,2023-08-09 09:11:00
+P00084,Doctor Review,2023-08-09 10:21:00
+P00084,IV Antibiotics,2023-08-09 10:42:00
+P00084,Ward Admission,2023-08-09 13:58:00
+P00084,Discharge,2023-08-10 11:24:00
+P00085,ER Registration,2023-06-27 16:30:00
+P00085,ER Triage,2023-06-27 17:05:00
+P00085,Lab Tests,2023-06-27 17:54:00
+P00085,Doctor Review,2023-06-27 19:24:00
+P00085,Observation,2023-06-27 21:02:00
+P00085,Discharge,2023-06-28 05:32:00
+P00086,ER Registration,2023-10-26 10:11:00
+P00086,ER Triage,2023-10-26 10:18:00
+P00086,Lab Tests,2023-10-26 11:06:00
+P00086,Doctor Review,2023-10-26 12:20:00
+P00086,Ward Admission,2023-10-26 15:15:00
+P00086,Discharge,2023-10-27 04:39:00
+P00087,ER Registration,2023-08-09 17:24:00
+P00087,ER Triage,2023-08-09 17:41:00
+P00087,Lab Tests,2023-08-09 18:32:00
+P00087,Doctor Review,2023-08-09 19:29:00
+P00087,Ward Admission,2023-08-09 22:03:00
+P00087,Discharge,2023-08-10 04:40:00
+P00088,ER Registration,2023-09-14 12:03:00
+P00088,ER Triage,2023-09-14 12:16:00
+P00088,Lab Tests,2023-09-14 13:14:00
+P00088,Doctor Review,2023-09-14 14:04:00
+P00088,Ward Admission,2023-09-14 16:56:00
+P00088,Discharge,2023-09-14 20:06:00
+P00089,ER Registration,2023-11-05 14:49:00
+P00089,ER Triage,2023-11-05 15:00:00
+P00089,Lab Tests,2023-11-05 16:06:00
+P00089,Doctor Review,2023-11-05 18:15:00
+P00089,Ward Admission,2023-11-05 21:59:00
+P00089,Discharge,2023-11-06 05:05:00
+P00090,ER Registration,2023-07-31 17:47:00
+P00090,ER Triage,2023-07-31 18:07:00
+P00090,Lab Tests,2023-07-31 18:58:00
+P00090,Doctor Review,2023-07-31 19:15:00
+P00090,Ward Admission,2023-07-31 20:08:00
+P00090,Discharge,2023-08-01 04:09:00
+P00091,ER Registration,2023-01-21 09:46:00
+P00091,ER Triage,2023-01-21 10:03:00
+P00091,Lab Tests,2023-01-21 10:42:00
+P00091,Doctor Review,2023-01-21 11:44:00
+P00091,Ward Admission,2023-01-21 14:15:00
+P00091,Discharge,2023-01-22 02:41:00
+P00092,ER Registration,2023-01-04 15:03:00
+P00092,ER Triage,2023-01-04 15:19:00
+P00092,ER Sepsis Triage,2023-01-04 15:37:00
+P00092,Doctor Review,2023-01-04 16:37:00
+P00092,IV Antibiotics,2023-01-04 17:31:00
+P00092,Ward Admission,2023-01-04 19:57:00
+P00092,Discharge,2023-01-05 17:26:00
+P00093,ER Registration,2023-09-29 11:13:00
+P00093,ER Triage,2023-09-29 11:26:00
+P00093,Lab Tests,2023-09-29 12:32:00
+P00093,Doctor Review,2023-09-29 13:02:00
+P00093,Ward Admission,2023-09-29 16:42:00
+P00093,Discharge,2023-09-30 04:50:00
+P00094,ER Registration,2023-08-26 19:00:00
+P00094,ER Triage,2023-08-26 19:10:00
+P00094,ER Sepsis Triage,2023-08-26 19:21:00
+P00094,Lab Tests,2023-08-26 20:11:00
+P00094,Doctor Review,2023-08-26 21:41:00
+P00094,IV Antibiotics,2023-08-26 22:39:00
+P00094,Ward Admission,2023-08-27 01:23:00
+P00094,Discharge,2023-08-27 23:42:00
+P00095,ER Registration,2023-08-23 07:42:00
+P00095,ER Triage,2023-08-23 07:53:00
+P00095,ER Sepsis Triage,2023-08-23 08:07:00
+P00095,Lab Tests,2023-08-23 08:38:00
+P00095,Doctor Review,2023-08-23 10:42:00
+P00095,IV Antibiotics,2023-08-23 11:00:00
+P00095,Ward Admission,2023-08-23 12:40:00
+P00095,Discharge,2023-08-23 18:46:00
+P00096,ER Registration,2023-10-02 06:55:00
+P00096,ER Triage,2023-10-02 07:17:00
+P00096,Lab Tests,2023-10-02 07:45:00
+P00096,Doctor Review,2023-10-02 09:02:00
+P00096,Ward Admission,2023-10-02 09:58:00
+P00096,Discharge,2023-10-02 13:10:00
+P00097,ER Registration,2023-01-02 15:47:00
+P00097,ER Triage,2023-01-02 16:01:00
+P00097,Lab Tests,2023-01-02 16:49:00
+P00097,Doctor Review,2023-01-02 17:10:00
+P00097,Ward Admission,2023-01-02 18:44:00
+P00097,Discharge,2023-01-03 05:53:00
+P00098,ER Registration,2023-08-05 07:56:00
+P00098,ER Triage,2023-08-05 08:03:00
+P00098,ER Sepsis Triage,2023-08-05 08:20:00
+P00098,Lab Tests,2023-08-05 09:16:00
+P00098,Doctor Review,2023-08-05 09:47:00
+P00098,IV Antibiotics,2023-08-05 10:06:00
+P00098,Ward Admission,2023-08-05 11:14:00
+P00098,Discharge,2023-08-06 10:58:00
+P00099,ER Registration,2023-02-17 07:27:00
+P00099,ER Triage,2023-02-17 07:39:00
+P00099,Lab Tests,2023-02-17 08:47:00
+P00099,Doctor Review,2023-02-17 09:30:00
+P00099,Ward Admission,2023-02-17 13:18:00
+P00099,Discharge,2023-02-18 01:13:00
+P00100,ER Registration,2023-06-05 12:29:00
+P00100,ER Triage,2023-06-05 12:48:00
+P00100,Lab Tests,2023-06-05 13:27:00
+P00100,Doctor Review,2023-06-05 14:36:00
+P00100,Ward Admission,2023-06-05 16:24:00
+P00100,Discharge,2023-06-06 05:06:00
+P00101,ER Registration,2023-10-13 16:35:00
+P00101,ER Triage,2023-10-13 16:44:00
+P00101,Lab Tests,2023-10-13 17:51:00
+P00101,Doctor Review,2023-10-13 18:52:00
+P00101,Observation,2023-10-13 22:02:00
+P00101,Discharge,2023-10-14 04:38:00
+P00102,ER Registration,2023-12-28 10:30:00
+P00102,ER Triage,2023-12-28 10:41:00
+P00102,Lab Tests,2023-12-28 11:12:00
+P00102,Doctor Review,2023-12-28 12:04:00
+P00102,Observation,2023-12-28 12:34:00
+P00102,Discharge,2023-12-28 22:32:00
+P00103,ER Registration,2023-09-16 13:41:00
+P00103,ER Triage,2023-09-16 14:05:00
+P00103,Lab Tests,2023-09-16 14:27:00
+P00103,Doctor Review,2023-09-16 15:18:00
+P00103,Ward Admission,2023-09-16 18:47:00
+P00103,Discharge,2023-09-17 05:31:00
+P00104,ER Registration,2023-11-26 07:12:00
+P00104,ER Triage,2023-11-26 07:31:00
+P00104,ER Sepsis Triage,2023-11-26 07:44:00
+P00104,Lab Tests,2023-11-26 08:44:00
+P00104,Doctor Review,2023-11-26 09:24:00
+P00104,IV Antibiotics,2023-11-26 10:01:00
+P00104,Observation,2023-11-26 11:00:00
+P00104,Discharge,2023-11-27 05:20:00
+P00105,ER Registration,2023-11-23 17:03:00
+P00105,ER Triage,2023-11-23 17:12:00
+P00105,Lab Tests,2023-11-23 17:41:00
+P00105,Doctor Review,2023-11-23 18:17:00
+P00105,Ward Admission,2023-11-23 22:09:00
+P00105,Discharge,2023-11-24 06:23:00
+P00106,ER Registration,2023-08-31 16:09:00
+P00106,ER Triage,2023-08-31 16:32:00
+P00106,Doctor Review,2023-08-31 18:23:00
+P00106,Ward Admission,2023-08-31 21:49:00
+P00106,Discharge,2023-09-01 06:00:00
+P00107,ER Registration,2023-06-03 17:56:00
+P00107,ER Triage,2023-06-03 18:13:00
+P00107,ER Sepsis Triage,2023-06-03 18:26:00
+P00107,Lab Tests,2023-06-03 19:17:00
+P00107,Doctor Review,2023-06-03 19:47:00
+P00107,IV Antibiotics,2023-06-03 20:24:00
+P00107,Ward Admission,2023-06-04 00:02:00
+P00107,Discharge,2023-06-05 01:02:00
+P00108,ER Registration,2023-02-12 16:18:00
+P00108,ER Triage,2023-02-12 16:31:00
+P00108,Lab Tests,2023-02-12 17:05:00
+P00108,Ward Admission,2023-02-12 20:02:00
+P00108,Discharge,2023-02-13 09:03:00
+P00109,ER Registration,2023-02-19 06:21:00
+P00109,ER Triage,2023-02-19 06:34:00
+P00109,Lab Tests,2023-02-19 07:42:00
+P00109,Doctor Review,2023-02-19 08:57:00
+P00109,Ward Admission,2023-02-19 11:39:00
+P00109,Discharge,2023-02-20 01:46:00
+P00110,ER Registration,2023-05-15 13:32:00
+P00110,ER Triage,2023-05-15 13:45:00
+P00110,Lab Tests,2023-05-15 14:42:00
+P00110,Doctor Review,2023-05-15 15:59:00
+P00110,Ward Admission,2023-05-15 16:52:00
+P00110,Discharge,2023-05-16 03:53:00
+P00111,ER Registration,2023-12-07 11:56:00
+P00111,ER Triage,2023-12-07 12:14:00
+P00111,Lab Tests,2023-12-07 13:16:00
+P00111,Doctor Review,2023-12-07 13:51:00
+P00111,Ward Admission,2023-12-07 15:45:00
+P00111,Discharge,2023-12-08 01:46:00
+P00112,ER Registration,2023-06-06 17:50:00
+P00112,ER Triage,2023-06-06 18:10:00
+P00112,Lab Tests,2023-06-06 18:55:00
+P00112,Doctor Review,2023-06-06 21:02:00
+P00112,Ward Admission,2023-06-06 21:41:00
+P00112,Discharge,2023-06-07 08:26:00
+P00113,ER Registration,2023-02-22 07:30:00
+P00113,ER Triage,2023-02-22 07:45:00
+P00113,Lab Tests,2023-02-22 08:12:00
+P00113,Ward Admission,2023-02-22 10:25:00
+P00113,Discharge,2023-02-22 22:11:00
+P00114,ER Registration,2023-11-23 06:01:00
+P00114,ER Triage,2023-11-23 06:23:00
+P00114,ER Sepsis Triage,2023-11-23 06:42:00
+P00114,Lab Tests,2023-11-23 07:14:00
+P00114,Doctor Review,2023-11-23 08:32:00
+P00114,IV Antibiotics,2023-11-23 09:22:00
+P00114,Ward Admission,2023-11-23 11:45:00
+P00114,Discharge,2023-11-23 18:16:00
+P00115,ER Registration,2023-08-02 09:28:00
+P00115,ER Triage,2023-08-02 09:41:00
+P00115,ER Sepsis Triage,2023-08-02 09:50:00
+P00115,Doctor Review,2023-08-02 11:07:00
+P00115,IV Antibiotics,2023-08-02 11:24:00
+P00115,Ward Admission,2023-08-02 12:01:00
+P00115,Discharge,2023-08-03 07:21:00
+P00116,ER Registration,2023-09-03 18:06:00
+P00116,ER Triage,2023-09-03 18:16:00
+P00116,Lab Tests,2023-09-03 18:36:00
+P00116,Doctor Review,2023-09-03 19:15:00
+P00116,Ward Admission,2023-09-03 20:42:00
+P00116,Discharge,2023-09-04 01:38:00
+P00117,ER Registration,2023-10-23 13:52:00
+P00117,ER Triage,2023-10-23 14:04:00
+P00117,Lab Tests,2023-10-23 14:33:00
+P00117,Doctor Review,2023-10-23 15:25:00
+P00117,Observation,2023-10-23 18:05:00
+P00117,Discharge,2023-10-24 01:44:00
+P00118,ER Registration,2023-08-13 13:05:00
+P00118,ER Triage,2023-08-13 13:25:00
+P00118,Doctor Review,2023-08-13 14:50:00
+P00118,Ward Admission,2023-08-13 15:57:00
+P00118,Discharge,2023-08-14 01:29:00
+P00119,ER Registration,2023-03-03 09:15:00
+P00119,ER Triage,2023-03-03 09:39:00
+P00119,ER Sepsis Triage,2023-03-03 09:48:00
+P00119,Lab Tests,2023-03-03 10:25:00
+P00119,Doctor Review,2023-03-03 11:33:00
+P00119,IV Antibiotics,2023-03-03 12:04:00
+P00119,Ward Admission,2023-03-03 15:55:00
+P00119,Discharge,2023-03-05 05:34:00
+P00120,ER Registration,2023-12-27 10:33:00
+P00120,ER Triage,2023-12-27 10:38:00
+P00120,Lab Tests,2023-12-27 11:17:00
+P00120,Doctor Review,2023-12-27 12:46:00
+P00120,Ward Admission,2023-12-27 16:04:00
+P00120,Discharge,2023-12-28 03:25:00
+P00121,ER Registration,2023-02-12 08:32:00
+P00121,ER Triage,2023-02-12 08:51:00
+P00121,Lab Tests,2023-02-12 09:33:00
+P00121,Doctor Review,2023-02-12 11:39:00
+P00121,Ward Admission,2023-02-12 13:45:00
+P00121,Discharge,2023-02-13 00:31:00
+P00122,ER Registration,2023-04-19 11:29:00
+P00122,ER Triage,2023-04-19 11:40:00
+P00122,ER Sepsis Triage,2023-04-19 11:52:00
+P00122,Lab Tests,2023-04-19 12:26:00
+P00122,Doctor Review,2023-04-19 13:33:00
+P00122,IV Antibiotics,2023-04-19 13:45:00
+P00122,Lab Tests,2023-04-19 14:45:00
+P00122,Doctor Review,2023-04-19 15:50:00
+P00122,Ward Admission,2023-04-19 19:47:00
+P00122,Discharge,2023-04-21 00:48:00
+P00123,ER Registration,2023-07-17 12:35:00
+P00123,ER Triage,2023-07-17 13:00:00
+P00123,ER Sepsis Triage,2023-07-17 13:09:00
+P00123,Lab Tests,2023-07-17 13:31:00
+P00123,Doctor Review,2023-07-17 15:01:00
+P00123,IV Antibiotics,2023-07-17 15:32:00
+P00123,Ward Admission,2023-07-17 16:27:00
+P00123,Discharge,2023-07-19 01:30:00
+P00124,ER Registration,2023-01-28 07:42:00
+P00124,ER Triage,2023-01-28 08:03:00
+P00124,Lab Tests,2023-01-28 08:23:00
+P00124,Doctor Review,2023-01-28 09:30:00
+P00124,Ward Admission,2023-01-28 12:47:00
+P00124,Discharge,2023-01-28 18:25:00
+P00125,ER Registration,2023-11-18 07:16:00
+P00125,ER Triage,2023-11-18 07:36:00
+P00125,ER Sepsis Triage,2023-11-18 07:49:00
+P00125,Lab Tests,2023-11-18 08:53:00
+P00125,Doctor Review,2023-11-18 09:18:00
+P00125,IV Antibiotics,2023-11-18 09:49:00
+P00125,Ward Admission,2023-11-18 12:35:00
+P00125,Discharge,2023-11-19 17:31:00
+P00126,ER Registration,2023-12-20 11:24:00
+P00126,ER Triage,2023-12-20 11:49:00
+P00126,ER Sepsis Triage,2023-12-20 12:09:00
+P00126,Lab Tests,2023-12-20 12:31:00
+P00126,Doctor Review,2023-12-20 13:16:00
+P00126,IV Antibiotics,2023-12-20 14:06:00
+P00126,Ward Admission,2023-12-20 17:31:00
+P00126,Discharge,2023-12-21 16:08:00
+P00127,ER Registration,2023-01-29 09:52:00
+P00127,ER Triage,2023-01-29 09:59:00
+P00127,Lab Tests,2023-01-29 10:25:00
+P00127,Doctor Review,2023-01-29 10:52:00
+P00127,Ward Admission,2023-01-29 13:15:00
+P00127,Discharge,2023-01-29 19:05:00
+P00128,ER Registration,2023-04-05 17:50:00
+P00128,ER Triage,2023-04-05 18:04:00
+P00128,ER Sepsis Triage,2023-04-05 18:09:00
+P00128,Lab Tests,2023-04-05 19:19:00
+P00128,Doctor Review,2023-04-05 20:19:00
+P00128,IV Antibiotics,2023-04-05 20:52:00
+P00128,Ward Admission,2023-04-05 23:12:00
+P00128,Discharge,2023-04-06 12:08:00
+P00129,ER Registration,2023-05-11 10:10:00
+P00129,ER Triage,2023-05-11 10:31:00
+P00129,Lab Tests,2023-05-11 11:34:00
+P00129,Doctor Review,2023-05-11 12:10:00
+P00129,Ward Admission,2023-05-11 13:24:00
+P00129,Discharge,2023-05-11 17:44:00
+P00130,ER Registration,2023-08-24 16:24:00
+P00130,ER Triage,2023-08-24 16:51:00
+P00130,ER Sepsis Triage,2023-08-24 17:03:00
+P00130,Lab Tests,2023-08-24 18:00:00
+P00130,Doctor Review,2023-08-24 19:14:00
+P00130,IV Antibiotics,2023-08-24 20:04:00
+P00130,Lab Tests,2023-08-24 20:50:00
+P00130,Doctor Review,2023-08-24 21:52:00
+P00130,Observation,2023-08-24 22:24:00
+P00130,Discharge,2023-08-26 09:09:00
+P00131,ER Registration,2023-11-15 10:54:00
+P00131,ER Triage,2023-11-15 11:29:00
+P00131,Lab Tests,2023-11-15 12:17:00
+P00131,Observation,2023-11-15 15:17:00
+P00131,Discharge,2023-11-15 23:23:00
+P00132,ER Registration,2023-03-12 16:54:00
+P00132,ER Triage,2023-03-12 17:22:00
+P00132,Lab Tests,2023-03-12 18:11:00
+P00132,Doctor Review,2023-03-12 18:51:00
+P00132,Observation,2023-03-12 20:59:00
+P00132,Discharge,2023-03-13 08:13:00
+P00133,ER Registration,2023-04-06 07:49:00
+P00133,ER Triage,2023-04-06 08:01:00
+P00133,ER Sepsis Triage,2023-04-06 08:18:00
+P00133,Lab Tests,2023-04-06 09:14:00
+P00133,Doctor Review,2023-04-06 10:06:00
+P00133,IV Antibiotics,2023-04-06 10:17:00
+P00133,Ward Admission,2023-04-06 13:35:00
+P00133,Discharge,2023-04-07 19:36:00
+P00134,ER Registration,2023-11-03 10:41:00
+P00134,ER Triage,2023-11-03 10:46:00
+P00134,Lab Tests,2023-11-03 11:49:00
+P00134,Doctor Review,2023-11-03 12:10:00
+P00134,Ward Admission,2023-11-03 15:15:00
+P00134,Discharge,2023-11-04 02:43:00
+P00135,ER Registration,2023-11-27 10:53:00
+P00135,ER Triage,2023-11-27 11:05:00
+P00135,Lab Tests,2023-11-27 11:47:00
+P00135,Doctor Review,2023-11-27 12:26:00
+P00135,Ward Admission,2023-11-27 15:34:00
+P00135,Discharge,2023-11-27 22:50:00
+P00136,ER Registration,2023-05-18 17:34:00
+P00136,ER Triage,2023-05-18 17:43:00
+P00136,ER Sepsis Triage,2023-05-18 17:51:00
+P00136,Lab Tests,2023-05-18 18:52:00
+P00136,Doctor Review,2023-05-18 20:38:00
+P00136,IV Antibiotics,2023-05-18 20:50:00
+P00136,Ward Admission,2023-05-18 23:48:00
+P00136,Discharge,2023-05-20 03:42:00
+P00137,ER Registration,2023-12-07 18:29:00
+P00137,ER Triage,2023-12-07 18:38:00
+P00137,ER Sepsis Triage,2023-12-07 18:45:00
+P00137,Lab Tests,2023-12-07 19:25:00
+P00137,Doctor Review,2023-12-07 20:02:00
+P00137,IV Antibiotics,2023-12-07 20:24:00
+P00137,Lab Tests,2023-12-07 21:28:00
+P00137,Doctor Review,2023-12-07 22:44:00
+P00137,Ward Admission,2023-12-08 00:47:00
+P00137,Discharge,2023-12-09 16:01:00
+P00138,ER Registration,2023-12-21 14:33:00
+P00138,ER Triage,2023-12-21 14:46:00
+P00138,ER Sepsis Triage,2023-12-21 14:56:00
+P00138,Lab Tests,2023-12-21 15:46:00
+P00138,Doctor Review,2023-12-21 16:38:00
+P00138,IV Antibiotics,2023-12-21 17:35:00
+P00138,Ward Admission,2023-12-21 21:30:00
+P00138,Discharge,2023-12-22 08:21:00
+P00139,ER Registration,2023-04-15 13:59:00
+P00139,ER Triage,2023-04-15 14:06:00
+P00139,Lab Tests,2023-04-15 14:40:00
+P00139,Doctor Review,2023-04-15 15:45:00
+P00139,Ward Admission,2023-04-15 19:40:00
+P00139,Discharge,2023-04-16 08:10:00
+P00140,ER Registration,2023-07-31 12:14:00
+P00140,ER Triage,2023-07-31 12:25:00
+P00140,Lab Tests,2023-07-31 12:45:00
+P00140,Doctor Review,2023-07-31 13:15:00
+P00140,Observation,2023-07-31 15:41:00
+P00140,Discharge,2023-08-01 00:58:00
+P00141,ER Registration,2023-12-06 17:28:00
+P00141,ER Triage,2023-12-06 17:41:00
+P00141,Lab Tests,2023-12-06 18:41:00
+P00141,Ward Admission,2023-12-06 19:38:00
+P00141,Discharge,2023-12-07 10:09:00
+P00142,ER Registration,2023-03-14 09:59:00
+P00142,ER Triage,2023-03-14 10:19:00
+P00142,ER Sepsis Triage,2023-03-14 10:24:00
+P00142,Lab Tests,2023-03-14 11:19:00
+P00142,Doctor Review,2023-03-14 12:02:00
+P00142,IV Antibiotics,2023-03-14 12:53:00
+P00142,Ward Admission,2023-03-14 13:39:00
+P00142,Discharge,2023-03-16 00:20:00
+P00143,ER Registration,2023-09-16 17:57:00
+P00143,ER Triage,2023-09-16 18:11:00
+P00143,ER Sepsis Triage,2023-09-16 18:29:00
+P00143,Lab Tests,2023-09-16 18:51:00
+P00143,Doctor Review,2023-09-16 20:10:00
+P00143,IV Antibiotics,2023-09-16 20:51:00
+P00143,Lab Tests,2023-09-16 21:36:00
+P00143,Doctor Review,2023-09-16 22:52:00
+P00143,Ward Admission,2023-09-17 01:39:00
+P00143,Discharge,2023-09-17 13:54:00
+P00144,ER Registration,2023-09-01 12:37:00
+P00144,ER Triage,2023-09-01 12:56:00
+P00144,Lab Tests,2023-09-01 14:03:00
+P00144,Doctor Review,2023-09-01 16:09:00
+P00144,Ward Admission,2023-09-01 18:26:00
+P00144,Discharge,2023-09-02 07:27:00
+P00145,ER Registration,2023-03-08 18:40:00
+P00145,ER Triage,2023-03-08 18:49:00
+P00145,Lab Tests,2023-03-08 19:50:00
+P00145,Doctor Review,2023-03-08 21:07:00
+P00145,Ward Admission,2023-03-09 00:14:00
+P00145,Discharge,2023-03-09 10:11:00
+P00146,ER Registration,2023-11-20 10:46:00
+P00146,ER Triage,2023-11-20 10:52:00
+P00146,Lab Tests,2023-11-20 11:25:00
+P00146,Doctor Review,2023-11-20 12:10:00
+P00146,Ward Admission,2023-11-20 14:12:00
+P00146,Discharge,2023-11-20 18:53:00
+P00147,ER Registration,2023-08-12 17:42:00
+P00147,ER Triage,2023-08-12 17:58:00
+P00147,Lab Tests,2023-08-12 18:59:00
+P00147,Doctor Review,2023-08-12 20:36:00
+P00147,Ward Admission,2023-08-12 22:16:00
+P00147,Discharge,2023-08-13 04:30:00
+P00148,ER Registration,2023-02-24 08:05:00
+P00148,ER Triage,2023-02-24 08:24:00
+P00148,Lab Tests,2023-02-24 08:57:00
+P00148,Doctor Review,2023-02-24 09:14:00
+P00148,Ward Admission,2023-02-24 09:56:00
+P00148,Discharge,2023-02-24 18:37:00
+P00149,ER Registration,2023-05-09 10:09:00
+P00149,ER Triage,2023-05-09 10:18:00
+P00149,ER Sepsis Triage,2023-05-09 10:29:00
+P00149,Lab Tests,2023-05-09 11:37:00
+P00149,Doctor Review,2023-05-09 13:07:00
+P00149,IV Antibiotics,2023-05-09 13:30:00
+P00149,Ward Admission,2023-05-09 17:28:00
+P00149,Discharge,2023-05-10 12:22:00
+P00150,ER Registration,2023-06-13 11:36:00
+P00150,ER Triage,2023-06-13 11:50:00
+P00150,Lab Tests,2023-06-13 12:48:00
+P00150,Doctor Review,2023-06-13 13:21:00
+P00150,Observation,2023-06-13 14:24:00
+P00150,Discharge,2023-06-14 02:37:00
+P00151,ER Registration,2023-09-08 10:16:00
+P00151,ER Triage,2023-09-08 10:26:00
+P00151,Lab Tests,2023-09-08 10:47:00
+P00151,Doctor Review,2023-09-08 11:47:00
+P00151,Ward Admission,2023-09-08 15:39:00
+P00151,Discharge,2023-09-08 22:42:00
+P00152,ER Registration,2023-04-15 16:02:00
+P00152,ER Triage,2023-04-15 16:17:00
+P00152,Lab Tests,2023-04-15 16:53:00
+P00152,Doctor Review,2023-04-15 18:01:00
+P00152,Ward Admission,2023-04-15 20:45:00
+P00152,Discharge,2023-04-16 01:41:00
+P00153,ER Registration,2023-02-13 18:43:00
+P00153,ER Triage,2023-02-13 18:50:00
+P00153,ER Sepsis Triage,2023-02-13 19:10:00
+P00153,Lab Tests,2023-02-13 19:53:00
+P00153,Doctor Review,2023-02-13 20:21:00
+P00153,IV Antibiotics,2023-02-13 20:59:00
+P00153,Ward Admission,2023-02-13 23:37:00
+P00153,Discharge,2023-02-14 17:44:00
+P00154,ER Registration,2023-02-15 16:29:00
+P00154,ER Triage,2023-02-15 16:38:00
+P00154,Lab Tests,2023-02-15 17:40:00
+P00154,Doctor Review,2023-02-15 18:53:00
+P00154,Observation,2023-02-15 22:07:00
+P00154,Discharge,2023-02-16 01:38:00
+P00155,ER Registration,2023-08-20 07:02:00
+P00155,ER Triage,2023-08-20 07:22:00
+P00155,ER Sepsis Triage,2023-08-20 07:39:00
+P00155,Lab Tests,2023-08-20 08:05:00
+P00155,Doctor Review,2023-08-20 09:51:00
+P00155,IV Antibiotics,2023-08-20 10:05:00
+P00155,Ward Admission,2023-08-20 10:55:00
+P00155,Discharge,2023-08-21 11:54:00
+P00156,ER Registration,2024-01-01 16:22:00
+P00156,ER Triage,2024-01-01 16:31:00
+P00156,Lab Tests,2024-01-01 17:08:00
+P00156,Doctor Review,2024-01-01 19:21:00
+P00156,Ward Admission,2024-01-01 22:11:00
+P00156,Discharge,2024-01-02 06:43:00
+P00157,ER Registration,2023-08-10 12:30:00
+P00157,ER Triage,2023-08-10 12:54:00
+P00157,ER Sepsis Triage,2023-08-10 13:08:00
+P00157,Lab Tests,2023-08-10 14:06:00
+P00157,Doctor Review,2023-08-10 14:49:00
+P00157,IV Antibiotics,2023-08-10 15:40:00
+P00157,Ward Admission,2023-08-10 18:56:00
+P00157,Discharge,2023-08-11 12:36:00
+P00158,ER Registration,2023-07-17 13:20:00
+P00158,ER Triage,2023-07-17 13:39:00
+P00158,ER Sepsis Triage,2023-07-17 13:51:00
+P00158,Lab Tests,2023-07-17 14:40:00
+P00158,Doctor Review,2023-07-17 15:07:00
+P00158,IV Antibiotics,2023-07-17 15:37:00
+P00158,Lab Tests,2023-07-17 16:49:00
+P00158,Doctor Review,2023-07-17 17:25:00
+P00158,Ward Admission,2023-07-17 19:30:00
+P00158,Discharge,2023-07-18 08:55:00
+P00159,ER Registration,2023-09-08 17:43:00
+P00159,ER Triage,2023-09-08 18:03:00
+P00159,Lab Tests,2023-09-08 18:28:00
+P00159,Doctor Review,2023-09-08 18:55:00
+P00159,Ward Admission,2023-09-08 22:35:00
+P00159,Discharge,2023-09-09 07:56:00
+P00160,ER Registration,2023-11-05 19:51:00
+P00160,ER Triage,2023-11-05 20:05:00
+P00160,Lab Tests,2023-11-05 21:02:00
+P00160,Observation,2023-11-05 23:55:00
+P00160,Discharge,2023-11-06 08:32:00
+P00161,ER Registration,2023-12-18 17:26:00
+P00161,ER Triage,2023-12-18 17:38:00
+P00161,ER Sepsis Triage,2023-12-18 17:56:00
+P00161,Lab Tests,2023-12-18 18:58:00
+P00161,Doctor Review,2023-12-18 20:41:00
+P00161,IV Antibiotics,2023-12-18 21:37:00
+P00161,Lab Tests,2023-12-18 22:25:00
+P00161,Doctor Review,2023-12-18 23:23:00
+P00161,Observation,2023-12-19 01:12:00
+P00161,Discharge,2023-12-20 04:12:00
+P00162,ER Registration,2023-06-04 07:46:00
+P00162,ER Triage,2023-06-04 08:09:00
+P00162,Lab Tests,2023-06-04 08:38:00
+P00162,Doctor Review,2023-06-04 09:21:00
+P00162,Ward Admission,2023-06-04 10:18:00
+P00162,Discharge,2023-06-04 19:16:00
+P00163,ER Registration,2023-09-02 15:29:00
+P00163,ER Triage,2023-09-02 15:54:00
+P00163,ER Sepsis Triage,2023-09-02 16:02:00
+P00163,Lab Tests,2023-09-02 16:58:00
+P00163,Doctor Review,2023-09-02 18:07:00
+P00163,IV Antibiotics,2023-09-02 18:52:00
+P00163,Observation,2023-09-02 22:38:00
+P00163,Discharge,2023-09-03 03:25:00
+P00164,ER Registration,2023-03-14 16:23:00
+P00164,ER Triage,2023-03-14 16:43:00
+P00164,ER Sepsis Triage,2023-03-14 16:48:00
+P00164,Lab Tests,2023-03-14 17:52:00
+P00164,Doctor Review,2023-03-14 18:50:00
+P00164,IV Antibiotics,2023-03-14 19:22:00
+P00164,Lab Tests,2023-03-14 20:47:00
+P00164,Doctor Review,2023-03-14 21:16:00
+P00164,Observation,2023-03-15 00:10:00
+P00164,Discharge,2023-03-16 06:31:00
+P00165,ER Registration,2023-02-16 07:11:00
+P00165,ER Triage,2023-02-16 07:20:00
+P00165,Lab Tests,2023-02-16 07:41:00
+P00165,Doctor Review,2023-02-16 09:03:00
+P00165,Ward Admission,2023-02-16 10:28:00
+P00165,Discharge,2023-02-16 19:53:00
+P00166,ER Registration,2023-10-30 13:09:00
+P00166,ER Triage,2023-10-30 13:28:00
+P00166,ER Sepsis Triage,2023-10-30 13:43:00
+P00166,Lab Tests,2023-10-30 14:22:00
+P00166,Doctor Review,2023-10-30 15:49:00
+P00166,IV Antibiotics,2023-10-30 16:37:00
+P00166,Ward Admission,2023-10-30 17:28:00
+P00166,Discharge,2023-10-31 00:03:00
+P00167,ER Registration,2023-11-08 08:39:00
+P00167,ER Triage,2023-11-08 08:49:00
+P00167,Lab Tests,2023-11-08 09:12:00
+P00167,Doctor Review,2023-11-08 10:01:00
+P00167,Ward Admission,2023-11-08 12:24:00
+P00167,Discharge,2023-11-09 02:41:00
+P00168,ER Registration,2023-01-28 13:14:00
+P00168,ER Triage,2023-01-28 13:46:00
+P00168,ER Sepsis Triage,2023-01-28 14:05:00
+P00168,Lab Tests,2023-01-28 14:38:00
+P00168,Doctor Review,2023-01-28 15:07:00
+P00168,IV Antibiotics,2023-01-28 15:39:00
+P00168,Observation,2023-01-28 17:59:00
+P00168,Discharge,2023-01-29 04:33:00
+P00169,ER Registration,2023-06-26 10:50:00
+P00169,ER Triage,2023-06-26 11:13:00
+P00169,ER Sepsis Triage,2023-06-26 11:33:00
+P00169,Lab Tests,2023-06-26 12:12:00
+P00169,Doctor Review,2023-06-26 13:17:00
+P00169,IV Antibiotics,2023-06-26 14:05:00
+P00169,Lab Tests,2023-06-26 14:48:00
+P00169,Doctor Review,2023-06-26 15:27:00
+P00169,Ward Admission,2023-06-26 16:51:00
+P00169,Discharge,2023-06-27 05:13:00
+P00170,ER Registration,2023-08-24 19:02:00
+P00170,ER Triage,2023-08-24 19:15:00
+P00170,Lab Tests,2023-08-24 19:42:00
+P00170,Doctor Review,2023-08-24 20:52:00
+P00170,Ward Admission,2023-08-24 22:06:00
+P00170,Discharge,2023-08-25 03:18:00
+P00171,ER Registration,2023-10-19 12:29:00
+P00171,ER Triage,2023-10-19 13:04:00
+P00171,Lab Tests,2023-10-19 13:56:00
+P00171,Doctor Review,2023-10-19 15:26:00
+P00171,Observation,2023-10-19 16:14:00
+P00171,Discharge,2023-10-20 02:00:00
+P00172,ER Registration,2023-09-25 18:39:00
+P00172,ER Triage,2023-09-25 18:45:00
+P00172,ER Sepsis Triage,2023-09-25 19:03:00
+P00172,Lab Tests,2023-09-25 19:27:00
+P00172,Doctor Review,2023-09-25 20:55:00
+P00172,IV Antibiotics,2023-09-25 21:32:00
+P00172,Ward Admission,2023-09-26 00:28:00
+P00172,Discharge,2023-09-27 07:04:00
+P00173,ER Registration,2023-09-23 18:06:00
+P00173,ER Triage,2023-09-23 18:46:00
+P00173,Lab Tests,2023-09-23 19:13:00
+P00173,Doctor Review,2023-09-23 20:09:00
+P00173,Observation,2023-09-23 21:22:00
+P00173,Discharge,2023-09-24 10:54:00
+P00174,ER Registration,2023-04-05 13:51:00
+P00174,ER Triage,2023-04-05 14:07:00
+P00174,Lab Tests,2023-04-05 14:33:00
+P00174,Doctor Review,2023-04-05 16:03:00
+P00174,Ward Admission,2023-04-05 18:15:00
+P00174,Discharge,2023-04-06 06:11:00
+P00175,ER Registration,2023-12-12 07:20:00
+P00175,ER Triage,2023-12-12 07:37:00
+P00175,Lab Tests,2023-12-12 08:44:00
+P00175,Doctor Review,2023-12-12 09:41:00
+P00175,Ward Admission,2023-12-12 13:30:00
+P00175,Discharge,2023-12-12 19:22:00
+P00176,ER Registration,2023-01-25 07:18:00
+P00176,ER Triage,2023-01-25 07:39:00
+P00176,Lab Tests,2023-01-25 08:32:00
+P00176,Doctor Review,2023-01-25 10:00:00
+P00176,Ward Admission,2023-01-25 11:59:00
+P00176,Discharge,2023-01-26 01:59:00
+P00177,ER Registration,2023-03-02 19:54:00
+P00177,ER Triage,2023-03-02 20:03:00
+P00177,ER Sepsis Triage,2023-03-02 20:15:00
+P00177,Lab Tests,2023-03-02 20:51:00
+P00177,Doctor Review,2023-03-02 21:25:00
+P00177,IV Antibiotics,2023-03-02 22:23:00
+P00177,Ward Admission,2023-03-02 23:12:00
+P00177,Discharge,2023-03-03 14:17:00
+P00178,ER Registration,2023-02-12 19:11:00
+P00178,ER Triage,2023-02-12 19:36:00
+P00178,ER Sepsis Triage,2023-02-12 19:56:00
+P00178,Lab Tests,2023-02-12 20:52:00
+P00178,Doctor Review,2023-02-12 22:04:00
+P00178,IV Antibiotics,2023-02-12 22:57:00
+P00178,Ward Admission,2023-02-13 01:51:00
+P00178,Discharge,2023-02-14 02:54:00
+P00179,ER Registration,2023-05-16 16:42:00
+P00179,ER Triage,2023-05-16 16:57:00
+P00179,Lab Tests,2023-05-16 17:21:00
+P00179,Doctor Review,2023-05-16 18:14:00
+P00179,Ward Admission,2023-05-16 22:07:00
+P00179,Discharge,2023-05-17 05:48:00
+P00180,ER Registration,2023-11-23 16:05:00
+P00180,ER Triage,2023-11-23 16:11:00
+P00180,ER Sepsis Triage,2023-11-23 16:27:00
+P00180,Lab Tests,2023-11-23 17:06:00
+P00180,Doctor Review,2023-11-23 17:25:00
+P00180,IV Antibiotics,2023-11-23 17:38:00
+P00180,Ward Admission,2023-11-23 19:42:00
+P00180,Discharge,2023-11-24 18:17:00
+P00181,ER Registration,2023-10-24 07:18:00
+P00181,ER Triage,2023-10-24 07:43:00
+P00181,Lab Tests,2023-10-24 08:08:00
+P00181,Doctor Review,2023-10-24 09:27:00
+P00181,Ward Admission,2023-10-24 11:35:00
+P00181,Discharge,2023-10-24 22:28:00
+P00182,ER Registration,2023-12-24 15:54:00
+P00182,ER Triage,2023-12-24 16:16:00
+P00182,ER Sepsis Triage,2023-12-24 16:22:00
+P00182,Lab Tests,2023-12-24 17:18:00
+P00182,Doctor Review,2023-12-24 18:14:00
+P00182,IV Antibiotics,2023-12-24 19:02:00
+P00182,Ward Admission,2023-12-24 21:33:00
+P00182,Discharge,2023-12-26 10:46:00
+P00183,ER Registration,2023-01-13 08:34:00
+P00183,ER Triage,2023-01-13 08:40:00
+P00183,ER Sepsis Triage,2023-01-13 08:59:00
+P00183,Lab Tests,2023-01-13 09:40:00
+P00183,Doctor Review,2023-01-13 10:05:00
+P00183,IV Antibiotics,2023-01-13 10:47:00
+P00183,Ward Admission,2023-01-13 14:02:00
+P00183,Discharge,2023-01-14 04:48:00
+P00184,ER Registration,2023-07-10 06:40:00
+P00184,ER Triage,2023-07-10 06:52:00
+P00184,Lab Tests,2023-07-10 07:40:00
+P00184,Doctor Review,2023-07-10 08:15:00
+P00184,Ward Admission,2023-07-10 10:18:00
+P00184,Discharge,2023-07-10 19:39:00
+P00185,ER Registration,2023-05-15 10:49:00
+P00185,ER Triage,2023-05-15 11:06:00
+P00185,Lab Tests,2023-05-15 11:47:00
+P00185,Doctor Review,2023-05-15 12:08:00
+P00185,Ward Admission,2023-05-15 16:00:00
+P00185,Discharge,2023-05-16 05:46:00
+P00186,ER Registration,2023-09-20 17:02:00
+P00186,ER Triage,2023-09-20 17:17:00
+P00186,Lab Tests,2023-09-20 17:43:00
+P00186,Doctor Review,2023-09-20 18:47:00
+P00186,Ward Admission,2023-09-20 20:29:00
+P00186,Discharge,2023-09-21 03:47:00
+P00187,ER Registration,2023-10-03 18:21:00
+P00187,ER Triage,2023-10-03 18:59:00
+P00187,Lab Tests,2023-10-03 19:40:00
+P00187,Doctor Review,2023-10-03 20:29:00
+P00187,Observation,2023-10-03 22:28:00
+P00187,Discharge,2023-10-04 06:45:00
+P00188,ER Registration,2023-04-06 17:11:00
+P00188,ER Triage,2023-04-06 17:38:00
+P00188,ER Sepsis Triage,2023-04-06 17:47:00
+P00188,Lab Tests,2023-04-06 18:12:00
+P00188,Doctor Review,2023-04-06 19:46:00
+P00188,IV Antibiotics,2023-04-06 20:37:00
+P00188,Observation,2023-04-07 00:35:00
+P00188,Discharge,2023-04-07 12:18:00
+P00189,ER Registration,2023-10-05 17:26:00
+P00189,ER Triage,2023-10-05 17:47:00
+P00189,Lab Tests,2023-10-05 18:49:00
+P00189,Doctor Review,2023-10-05 19:50:00
+P00189,Ward Admission,2023-10-05 20:24:00
+P00189,Discharge,2023-10-06 05:35:00
+P00190,ER Registration,2023-11-20 11:16:00
+P00190,ER Triage,2023-11-20 11:26:00
+P00190,Doctor Review,2023-11-20 12:43:00
+P00190,Ward Admission,2023-11-20 14:02:00
+P00190,Discharge,2023-11-20 20:53:00
+P00191,ER Registration,2023-08-29 08:20:00
+P00191,ER Triage,2023-08-29 08:29:00
+P00191,Lab Tests,2023-08-29 09:39:00
+P00191,Doctor Review,2023-08-29 11:03:00
+P00191,Ward Admission,2023-08-29 14:42:00
+P00191,Discharge,2023-08-30 02:41:00
+P00192,ER Registration,2023-09-16 06:38:00
+P00192,ER Triage,2023-09-16 06:53:00
+P00192,ER Sepsis Triage,2023-09-16 07:02:00
+P00192,Lab Tests,2023-09-16 07:31:00
+P00192,Doctor Review,2023-09-16 08:25:00
+P00192,IV Antibiotics,2023-09-16 09:21:00
+P00192,Ward Admission,2023-09-16 11:43:00
+P00192,Discharge,2023-09-16 17:41:00
+P00193,ER Registration,2023-08-24 13:00:00
+P00193,ER Triage,2023-08-24 13:25:00
+P00193,Lab Tests,2023-08-24 14:00:00
+P00193,Observation,2023-08-24 17:06:00
+P00193,Discharge,2023-08-25 00:57:00
+P00194,ER Registration,2023-07-08 18:50:00
+P00194,ER Triage,2023-07-08 19:20:00
+P00194,Lab Tests,2023-07-08 19:55:00
+P00194,Doctor Review,2023-07-08 21:47:00
+P00194,Observation,2023-07-08 23:06:00
+P00194,Discharge,2023-07-09 08:22:00
+P00195,ER Registration,2023-03-14 17:34:00
+P00195,ER Triage,2023-03-14 17:57:00
+P00195,Doctor Review,2023-03-14 18:48:00
+P00195,Ward Admission,2023-03-14 22:37:00
+P00195,Discharge,2023-03-15 08:08:00
+P00196,ER Registration,2023-08-10 14:34:00
+P00196,ER Triage,2023-08-10 14:55:00
+P00196,Lab Tests,2023-08-10 15:25:00
+P00196,Doctor Review,2023-08-10 16:13:00
+P00196,Ward Admission,2023-08-10 17:47:00
+P00196,Discharge,2023-08-10 21:40:00
+P00197,ER Registration,2023-07-28 16:56:00
+P00197,ER Triage,2023-07-28 17:16:00
+P00197,Lab Tests,2023-07-28 18:11:00
+P00197,Ward Admission,2023-07-28 21:43:00
+P00197,Discharge,2023-07-29 09:31:00
+P00198,ER Registration,2023-05-03 08:07:00
+P00198,ER Triage,2023-05-03 08:21:00
+P00198,Lab Tests,2023-05-03 08:51:00
+P00198,Doctor Review,2023-05-03 10:11:00
+P00198,Ward Admission,2023-05-03 11:18:00
+P00198,Discharge,2023-05-03 21:45:00
+P00199,ER Registration,2023-06-20 07:33:00
+P00199,ER Triage,2023-06-20 07:45:00
+P00199,ER Sepsis Triage,2023-06-20 08:04:00
+P00199,Lab Tests,2023-06-20 08:25:00
+P00199,Doctor Review,2023-06-20 10:02:00
+P00199,IV Antibiotics,2023-06-20 10:44:00
+P00199,Ward Admission,2023-06-20 12:49:00
+P00199,Discharge,2023-06-21 07:54:00
+P00200,ER Registration,2023-02-01 12:35:00
+P00200,ER Triage,2023-02-01 12:42:00
+P00200,Lab Tests,2023-02-01 13:03:00
+P00200,Doctor Review,2023-02-01 13:30:00
+P00200,Ward Admission,2023-02-01 17:02:00
+P00200,Discharge,2023-02-02 07:07:00
+P00201,ER Registration,2023-11-25 11:43:00
+P00201,ER Triage,2023-11-25 11:52:00
+P00201,Lab Tests,2023-11-25 12:30:00
+P00201,Ward Admission,2023-11-25 15:00:00
+P00201,Discharge,2023-11-26 05:52:00
+P00202,ER Registration,2023-01-18 08:22:00
+P00202,ER Triage,2023-01-18 08:42:00
+P00202,ER Sepsis Triage,2023-01-18 09:01:00
+P00202,Lab Tests,2023-01-18 09:26:00
+P00202,Doctor Review,2023-01-18 10:08:00
+P00202,IV Antibiotics,2023-01-18 10:27:00
+P00202,Lab Tests,2023-01-18 11:43:00
+P00202,Doctor Review,2023-01-18 12:41:00
+P00202,Ward Admission,2023-01-18 15:26:00
+P00202,Discharge,2023-01-19 23:19:00
+P00203,ER Registration,2023-07-04 07:53:00
+P00203,ER Triage,2023-07-04 08:07:00
+P00203,ER Sepsis Triage,2023-07-04 08:19:00
+P00203,Lab Tests,2023-07-04 08:42:00
+P00203,Doctor Review,2023-07-04 10:31:00
+P00203,IV Antibiotics,2023-07-04 10:45:00
+P00203,Ward Admission,2023-07-04 11:43:00
+P00203,Discharge,2023-07-06 00:50:00
+P00204,ER Registration,2023-02-25 16:11:00
+P00204,ER Triage,2023-02-25 16:33:00
+P00204,ER Sepsis Triage,2023-02-25 16:38:00
+P00204,Lab Tests,2023-02-25 17:34:00
+P00204,Doctor Review,2023-02-25 18:07:00
+P00204,IV Antibiotics,2023-02-25 18:35:00
+P00204,Lab Tests,2023-02-25 19:44:00
+P00204,Doctor Review,2023-02-25 20:26:00
+P00204,Ward Admission,2023-02-25 21:57:00
+P00204,Discharge,2023-02-27 05:23:00
+P00205,ER Registration,2023-08-06 09:11:00
+P00205,ER Triage,2023-08-06 09:18:00
+P00205,Lab Tests,2023-08-06 10:01:00
+P00205,Doctor Review,2023-08-06 11:23:00
+P00205,Ward Admission,2023-08-06 14:12:00
+P00205,Discharge,2023-08-07 01:51:00
+P00206,ER Registration,2023-06-12 19:25:00
+P00206,ER Triage,2023-06-12 19:58:00
+P00206,Lab Tests,2023-06-12 20:42:00
+P00206,Doctor Review,2023-06-12 21:02:00
+P00206,Observation,2023-06-13 00:14:00
+P00206,Discharge,2023-06-13 09:50:00
+P00207,ER Registration,2023-04-12 12:22:00
+P00207,ER Triage,2023-04-12 12:35:00
+P00207,ER Sepsis Triage,2023-04-12 12:40:00
+P00207,Lab Tests,2023-04-12 13:04:00
+P00207,Doctor Review,2023-04-12 13:32:00
+P00207,IV Antibiotics,2023-04-12 14:31:00
+P00207,Ward Admission,2023-04-12 17:29:00
+P00207,Discharge,2023-04-13 19:10:00
+P00208,ER Registration,2023-08-02 08:16:00
+P00208,ER Triage,2023-08-02 08:22:00
+P00208,Lab Tests,2023-08-02 09:03:00
+P00208,Doctor Review,2023-08-02 09:40:00
+P00208,Ward Admission,2023-08-02 13:29:00
+P00208,Discharge,2023-08-03 04:10:00
+P00209,ER Registration,2023-03-25 13:55:00
+P00209,ER Triage,2023-03-25 14:27:00
+P00209,ER Sepsis Triage,2023-03-25 14:37:00
+P00209,Lab Tests,2023-03-25 15:01:00
+P00209,Doctor Review,2023-03-25 16:14:00
+P00209,IV Antibiotics,2023-03-25 16:26:00
+P00209,Lab Tests,2023-03-25 16:58:00
+P00209,Doctor Review,2023-03-25 18:08:00
+P00209,Observation,2023-03-25 19:29:00
+P00209,Discharge,2023-03-26 01:20:00
+P00210,ER Registration,2023-05-31 11:23:00
+P00210,ER Triage,2023-05-31 11:37:00
+P00210,ER Sepsis Triage,2023-05-31 11:54:00
+P00210,Doctor Review,2023-05-31 12:41:00
+P00210,IV Antibiotics,2023-05-31 12:53:00
+P00210,Ward Admission,2023-05-31 16:35:00
+P00210,Discharge,2023-06-01 08:37:00
+P00211,ER Registration,2023-09-06 10:52:00
+P00211,ER Triage,2023-09-06 11:17:00
+P00211,Lab Tests,2023-09-06 11:40:00
+P00211,Doctor Review,2023-09-06 13:05:00
+P00211,Observation,2023-09-06 14:44:00
+P00211,Discharge,2023-09-06 19:51:00
+P00212,ER Registration,2023-12-25 19:38:00
+P00212,ER Triage,2023-12-25 19:54:00
+P00212,ER Sepsis Triage,2023-12-25 20:12:00
+P00212,Lab Tests,2023-12-25 21:19:00
+P00212,Doctor Review,2023-12-25 22:23:00
+P00212,IV Antibiotics,2023-12-25 22:54:00
+P00212,Ward Admission,2023-12-26 00:11:00
+P00212,Discharge,2023-12-27 13:03:00
+P00213,ER Registration,2023-08-09 17:48:00
+P00213,ER Triage,2023-08-09 18:08:00
+P00213,Lab Tests,2023-08-09 19:01:00
+P00213,Doctor Review,2023-08-09 19:38:00
+P00213,Ward Admission,2023-08-09 23:14:00
+P00213,Discharge,2023-08-10 09:28:00
+P00214,ER Registration,2023-10-01 07:20:00
+P00214,ER Triage,2023-10-01 07:38:00
+P00214,Lab Tests,2023-10-01 08:09:00
+P00214,Doctor Review,2023-10-01 09:33:00
+P00214,Ward Admission,2023-10-01 10:29:00
+P00214,Discharge,2023-10-01 14:50:00
+P00215,ER Registration,2023-10-11 11:35:00
+P00215,ER Triage,2023-10-11 11:49:00
+P00215,Lab Tests,2023-10-11 12:47:00
+P00215,Doctor Review,2023-10-11 13:23:00
+P00215,Ward Admission,2023-10-11 16:49:00
+P00215,Discharge,2023-10-12 03:23:00
+P00216,ER Registration,2023-01-26 11:59:00
+P00216,ER Triage,2023-01-26 12:18:00
+P00216,Lab Tests,2023-01-26 13:00:00
+P00216,Doctor Review,2023-01-26 14:10:00
+P00216,Ward Admission,2023-01-26 15:50:00
+P00216,Discharge,2023-01-27 05:44:00
+P00217,ER Registration,2023-08-11 19:30:00
+P00217,ER Triage,2023-08-11 19:36:00
+P00217,ER Sepsis Triage,2023-08-11 19:43:00
+P00217,Lab Tests,2023-08-11 20:28:00
+P00217,Doctor Review,2023-08-11 21:03:00
+P00217,IV Antibiotics,2023-08-11 21:14:00
+P00217,Lab Tests,2023-08-11 22:22:00
+P00217,Doctor Review,2023-08-11 23:25:00
+P00217,Ward Admission,2023-08-12 03:15:00
+P00217,Discharge,2023-08-13 12:09:00
+P00218,ER Registration,2023-12-19 06:35:00
+P00218,ER Triage,2023-12-19 06:44:00
+P00218,Lab Tests,2023-12-19 07:53:00
+P00218,Doctor Review,2023-12-19 08:54:00
+P00218,Ward Admission,2023-12-19 11:02:00
+P00218,Discharge,2023-12-19 23:42:00
+P00219,ER Registration,2023-07-11 06:33:00
+P00219,ER Triage,2023-07-11 06:57:00
+P00219,Lab Tests,2023-07-11 07:45:00
+P00219,Ward Admission,2023-07-11 09:50:00
+P00219,Discharge,2023-07-11 20:24:00
+P00220,ER Registration,2023-07-30 19:01:00
+P00220,ER Triage,2023-07-30 19:12:00
+P00220,Lab Tests,2023-07-30 20:05:00
+P00220,Doctor Review,2023-07-30 21:00:00
+P00220,Observation,2023-07-31 00:16:00
+P00220,Discharge,2023-07-31 08:01:00
+P00221,ER Registration,2023-06-23 10:15:00
+P00221,ER Triage,2023-06-23 10:23:00
+P00221,ER Sepsis Triage,2023-06-23 10:28:00
+P00221,Lab Tests,2023-06-23 11:19:00
+P00221,Doctor Review,2023-06-23 13:28:00
+P00221,IV Antibiotics,2023-06-23 13:45:00
+P00221,Ward Admission,2023-06-23 15:22:00
+P00221,Discharge,2023-06-24 12:08:00
+P00222,ER Registration,2023-03-17 18:00:00
+P00222,ER Triage,2023-03-17 18:30:00
+P00222,Lab Tests,2023-03-17 19:29:00
+P00222,Doctor Review,2023-03-17 20:46:00
+P00222,Observation,2023-03-17 22:07:00
+P00222,Discharge,2023-03-18 03:12:00
+P00223,ER Registration,2023-05-29 08:18:00
+P00223,ER Triage,2023-05-29 08:25:00
+P00223,Lab Tests,2023-05-29 09:30:00
+P00223,Doctor Review,2023-05-29 09:56:00
+P00223,Ward Admission,2023-05-29 13:53:00
+P00223,Discharge,2023-05-30 04:31:00
+P00224,ER Registration,2023-12-20 11:27:00
+P00224,ER Triage,2023-12-20 11:43:00
+P00224,Lab Tests,2023-12-20 12:38:00
+P00224,Doctor Review,2023-12-20 13:31:00
+P00224,Ward Admission,2023-12-20 14:41:00
+P00224,Discharge,2023-12-21 05:38:00
+P00225,ER Registration,2023-06-11 16:53:00
+P00225,ER Triage,2023-06-11 17:03:00
+P00225,Lab Tests,2023-06-11 17:55:00
+P00225,Doctor Review,2023-06-11 18:35:00
+P00225,Ward Admission,2023-06-11 22:27:00
+P00225,Discharge,2023-06-12 03:49:00
+P00226,ER Registration,2023-11-25 10:02:00
+P00226,ER Triage,2023-11-25 10:22:00
+P00226,ER Sepsis Triage,2023-11-25 10:27:00
+P00226,Lab Tests,2023-11-25 11:23:00
+P00226,Doctor Review,2023-11-25 12:48:00
+P00226,IV Antibiotics,2023-11-25 13:06:00
+P00226,Ward Admission,2023-11-25 16:12:00
+P00226,Discharge,2023-11-26 01:05:00
+P00227,ER Registration,2023-04-01 07:07:00
+P00227,ER Triage,2023-04-01 07:21:00
+P00227,Lab Tests,2023-04-01 08:26:00
+P00227,Doctor Review,2023-04-01 09:48:00
+P00227,Ward Admission,2023-04-01 12:03:00
+P00227,Discharge,2023-04-01 22:02:00
+P00228,ER Registration,2023-06-17 15:48:00
+P00228,ER Triage,2023-06-17 15:55:00
+P00228,Lab Tests,2023-06-17 16:35:00
+P00228,Doctor Review,2023-06-17 18:23:00
+P00228,Ward Admission,2023-06-17 20:52:00
+P00228,Discharge,2023-06-18 11:28:00
+P00229,ER Registration,2023-05-10 14:49:00
+P00229,ER Triage,2023-05-10 15:05:00
+P00229,Lab Tests,2023-05-10 16:14:00
+P00229,Doctor Review,2023-05-10 17:44:00
+P00229,Ward Admission,2023-05-10 19:00:00
+P00229,Discharge,2023-05-11 00:12:00
+P00230,ER Registration,2023-09-23 13:23:00
+P00230,ER Triage,2023-09-23 13:44:00
+P00230,Lab Tests,2023-09-23 14:07:00
+P00230,Doctor Review,2023-09-23 15:28:00
+P00230,Ward Admission,2023-09-23 16:37:00
+P00230,Discharge,2023-09-24 00:48:00
+P00231,ER Registration,2023-12-01 08:48:00
+P00231,ER Triage,2023-12-01 08:58:00
+P00231,Lab Tests,2023-12-01 10:03:00
+P00231,Doctor Review,2023-12-01 12:04:00
+P00231,Ward Admission,2023-12-01 13:46:00
+P00231,Discharge,2023-12-01 18:06:00
+P00232,ER Registration,2023-01-10 10:16:00
+P00232,ER Triage,2023-01-10 10:27:00
+P00232,Lab Tests,2023-01-10 11:22:00
+P00232,Doctor Review,2023-01-10 12:15:00
+P00232,Ward Admission,2023-01-10 15:22:00
+P00232,Discharge,2023-01-11 03:28:00
+P00233,ER Registration,2023-05-15 07:35:00
+P00233,ER Triage,2023-05-15 07:56:00
+P00233,ER Sepsis Triage,2023-05-15 08:06:00
+P00233,Lab Tests,2023-05-15 09:03:00
+P00233,Doctor Review,2023-05-15 10:01:00
+P00233,IV Antibiotics,2023-05-15 10:47:00
+P00233,Lab Tests,2023-05-15 12:12:00
+P00233,Doctor Review,2023-05-15 12:33:00
+P00233,Ward Admission,2023-05-15 13:23:00
+P00233,Discharge,2023-05-15 19:29:00
+P00234,ER Registration,2023-07-06 16:56:00
+P00234,ER Triage,2023-07-06 17:19:00
+P00234,Lab Tests,2023-07-06 17:52:00
+P00234,Doctor Review,2023-07-06 19:00:00
+P00234,Ward Admission,2023-07-06 22:08:00
+P00234,Discharge,2023-07-07 12:02:00
+P00235,ER Registration,2023-01-11 06:31:00
+P00235,ER Triage,2023-01-11 06:51:00
+P00235,ER Sepsis Triage,2023-01-11 07:05:00
+P00235,Lab Tests,2023-01-11 07:44:00
+P00235,Doctor Review,2023-01-11 08:50:00
+P00235,IV Antibiotics,2023-01-11 09:19:00
+P00235,Ward Admission,2023-01-11 11:45:00
+P00235,Discharge,2023-01-11 19:43:00
+P00236,ER Registration,2023-12-26 17:45:00
+P00236,ER Triage,2023-12-26 17:51:00
+P00236,ER Sepsis Triage,2023-12-26 18:01:00
+P00236,Lab Tests,2023-12-26 18:51:00
+P00236,Doctor Review,2023-12-26 19:49:00
+P00236,IV Antibiotics,2023-12-26 20:37:00
+P00236,Ward Admission,2023-12-26 21:43:00
+P00236,Discharge,2023-12-27 22:03:00
+P00237,ER Registration,2023-03-31 18:15:00
+P00237,ER Triage,2023-03-31 18:30:00
+P00237,Lab Tests,2023-03-31 19:12:00
+P00237,Ward Admission,2023-03-31 20:15:00
+P00237,Discharge,2023-04-01 05:34:00
+P00238,ER Registration,2023-06-01 14:47:00
+P00238,ER Triage,2023-06-01 15:09:00
+P00238,Lab Tests,2023-06-01 15:44:00
+P00238,Doctor Review,2023-06-01 16:57:00
+P00238,Ward Admission,2023-06-01 19:22:00
+P00238,Discharge,2023-06-02 02:35:00
+P00239,ER Registration,2023-02-25 08:24:00
+P00239,ER Triage,2023-02-25 08:32:00
+P00239,Lab Tests,2023-02-25 09:16:00
+P00239,Doctor Review,2023-02-25 10:24:00
+P00239,Ward Admission,2023-02-25 11:57:00
+P00239,Discharge,2023-02-25 17:40:00
+P00240,ER Registration,2023-10-26 19:53:00
+P00240,ER Triage,2023-10-26 20:08:00
+P00240,ER Sepsis Triage,2023-10-26 20:23:00
+P00240,Lab Tests,2023-10-26 20:53:00
+P00240,Doctor Review,2023-10-26 22:13:00
+P00240,IV Antibiotics,2023-10-26 22:52:00
+P00240,Lab Tests,2023-10-26 23:41:00
+P00240,Doctor Review,2023-10-27 00:32:00
+P00240,Ward Admission,2023-10-27 01:07:00
+P00240,Discharge,2023-10-27 10:15:00
+P00241,ER Registration,2023-07-24 12:42:00
+P00241,ER Triage,2023-07-24 13:03:00
+P00241,Lab Tests,2023-07-24 13:38:00
+P00241,Doctor Review,2023-07-24 14:38:00
+P00241,Ward Admission,2023-07-24 15:20:00
+P00241,Discharge,2023-07-24 19:11:00
+P00242,ER Registration,2023-02-01 10:48:00
+P00242,ER Triage,2023-02-01 11:08:00
+P00242,ER Sepsis Triage,2023-02-01 11:28:00
+P00242,Lab Tests,2023-02-01 11:48:00
+P00242,Doctor Review,2023-02-01 12:58:00
+P00242,IV Antibiotics,2023-02-01 13:16:00
+P00242,Ward Admission,2023-02-01 16:52:00
+P00242,Discharge,2023-02-02 20:50:00
+P00243,ER Registration,2023-07-13 19:02:00
+P00243,ER Triage,2023-07-13 19:19:00
+P00243,Lab Tests,2023-07-13 20:04:00
+P00243,Doctor Review,2023-07-13 21:30:00
+P00243,Ward Admission,2023-07-13 22:49:00
+P00243,Discharge,2023-07-14 08:00:00
+P00244,ER Registration,2023-06-25 15:26:00
+P00244,ER Triage,2023-06-25 15:48:00
+P00244,Lab Tests,2023-06-25 16:40:00
+P00244,Doctor Review,2023-06-25 18:47:00
+P00244,Observation,2023-06-25 20:28:00
+P00244,Discharge,2023-06-26 10:06:00
+P00245,ER Registration,2023-03-18 17:36:00
+P00245,ER Triage,2023-03-18 18:00:00
+P00245,ER Sepsis Triage,2023-03-18 18:08:00
+P00245,Lab Tests,2023-03-18 18:34:00
+P00245,Doctor Review,2023-03-18 20:01:00
+P00245,IV Antibiotics,2023-03-18 20:46:00
+P00245,Ward Admission,2023-03-19 00:29:00
+P00245,Discharge,2023-03-19 13:19:00
+P00246,ER Registration,2023-08-22 09:23:00
+P00246,ER Triage,2023-08-22 10:01:00
+P00246,ER Sepsis Triage,2023-08-22 10:18:00
+P00246,Lab Tests,2023-08-22 10:40:00
+P00246,Doctor Review,2023-08-22 11:37:00
+P00246,IV Antibiotics,2023-08-22 12:17:00
+P00246,Lab Tests,2023-08-22 12:56:00
+P00246,Doctor Review,2023-08-22 13:54:00
+P00246,Observation,2023-08-22 16:35:00
+P00246,Discharge,2023-08-23 05:07:00
+P00247,ER Registration,2023-10-22 11:35:00
+P00247,ER Triage,2023-10-22 11:59:00
+P00247,ER Sepsis Triage,2023-10-22 12:14:00
+P00247,Lab Tests,2023-10-22 13:13:00
+P00247,Doctor Review,2023-10-22 14:06:00
+P00247,IV Antibiotics,2023-10-22 14:53:00
+P00247,Lab Tests,2023-10-22 16:16:00
+P00247,Doctor Review,2023-10-22 17:08:00
+P00247,Ward Admission,2023-10-22 19:54:00
+P00247,Discharge,2023-10-24 08:20:00
+P00248,ER Registration,2023-05-23 18:05:00
+P00248,ER Triage,2023-05-23 18:28:00
+P00248,ER Sepsis Triage,2023-05-23 18:42:00
+P00248,Lab Tests,2023-05-23 19:03:00
+P00248,Doctor Review,2023-05-23 19:32:00
+P00248,IV Antibiotics,2023-05-23 20:08:00
+P00248,Ward Admission,2023-05-23 23:07:00
+P00248,Discharge,2023-05-24 23:07:00
+P00249,ER Registration,2023-12-24 19:35:00
+P00249,ER Triage,2023-12-24 20:00:00
+P00249,ER Sepsis Triage,2023-12-24 20:05:00
+P00249,Lab Tests,2023-12-24 20:41:00
+P00249,Doctor Review,2023-12-24 22:54:00
+P00249,IV Antibiotics,2023-12-24 23:40:00
+P00249,Ward Admission,2023-12-25 01:08:00
+P00249,Discharge,2023-12-25 07:38:00
+P00250,ER Registration,2023-01-20 15:57:00
+P00250,ER Triage,2023-01-20 16:29:00
+P00250,Lab Tests,2023-01-20 17:29:00
+P00250,Doctor Review,2023-01-20 18:32:00
+P00250,Observation,2023-01-20 19:39:00
+P00250,Discharge,2023-01-21 10:16:00`;
+const $=id=>document.getElementById(id);
+function parseCSV(t){const L=t.trim().split(/\r?\n/);const h=L[0].split(',').map(s=>s.trim());return L.slice(1).filter(x=>x).map(l=>{const c=l.split(',');const o={};h.forEach((k,i)=>o[k]=(c[i]||'').trim());return o;});}
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+const median=a=>{if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;};
+const fmtH=h=>h<1?Math.round(h*60)+' min':h<48?h.toFixed(1)+' h':(h/24).toFixed(1)+' d';
+const fmtM=m=>m<60?Math.round(m)+' min':(m/60).toFixed(1)+' h';
+const kpi=(v,l)=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`;
+function bars(el,items,max,warn){$(el).innerHTML=items.map(([l,v,txt])=>`<div class="bar"><div class="l" title="${l}">${l}</div><div class="t"><div class="f ${warn?'w':''}" style="width:${max?100*v/max:0}%"></div></div><div class="v">${txt}</div></div>`).join('')||'<span class="small">No data</span>';}
+function hist(el,vals,bins,label){const mn=Math.min(...vals),mx=Math.max(...vals),w=(mx-mn)/bins||1;const c=Array(bins).fill(0);vals.forEach(v=>c[Math.min(bins-1,Math.floor((v-mn)/w))]++);const m=Math.max(...c);$(el).innerHTML=c.map((n,i)=>`<div style="height:${100*n/m}%" title="${(mn+i*w).toFixed(1)}–${(mn+(i+1)*w).toFixed(1)}: ${n}"></div>`).join('');$(el+'-s').textContent=`${label}: min ${mn.toFixed(1)} · median ${median(vals).toFixed(1)} · max ${mx.toFixed(1)}`;}
+// tabs
+const tabs=[['overview','Overview'],['real','Real data'],['pm','Process mining'],['case','Case explorer'],['own','Load your own']];
+$('nav').innerHTML=tabs.map(([k,n],i)=>`<button data-k="${k}" class="${i?'':'on'}">${n}</button>`).join('');
+$('nav').onclick=e=>{const k=e.target.dataset.k;if(!k)return;document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b===e.target));document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('on',s.id==='t-'+k));};
+// ---------- REAL
+const REAL=parseCSV(REAL_CSV).map(r=>({...r,lac:+r.lactate_mmol_l,temp:+r.temperature_c,hr:+r.heart_rate,wbc:+r.wbc_count}));
+const byId={};REAL.forEach(r=>byId[r.patient_id]=r);
+const uniq=k=>[...new Set(REAL.map(r=>r[k]))].sort();
+const opt=(a)=>'<option value="">All</option>'+a.map(x=>`<option>${x}</option>`).join('');
+$('fWard').innerHTML=opt(uniq('ward'));$('fDoc').innerHTML=opt(uniq('doctor_on_duty'));$('pWard').innerHTML=opt(uniq('ward'));
+const screenPos=r=>r.lac>2.5||r.temp>=38.5;
+function count(a,k){const m={};a.forEach(r=>m[r[k]]=(m[r[k]]||0)+1);return Object.entries(m).sort((x,y)=>y[1]-x[1]);}
+function renderReal(){const w=$('fWard').value,d=$('fDoc').value;const R=REAL.filter(r=>(!w||r.ward===w)&&(!d||r.doctor_on_duty===d));
+ const flagged=R.filter(r=>r.sepsis_flag==='Yes').length,sp=R.filter(screenPos).length;
+ $('r-kpis').innerHTML=kpi(R.length,'patients')+kpi(flagged,'recorded sepsis_flag = Yes')+kpi(sp,'meet vitals screen*')+kpi(median(R.map(r=>r.lac)).toFixed(1),'median lactate (mmol/L)')+kpi(median(R.map(r=>r.hr)).toFixed(0),'median heart rate');
+ const cw=count(R,'ward'),cd=count(R,'doctor_on_duty');bars('r-ward',cw.map(([l,n])=>[l,n,n]),cw[0]?.[1]);bars('r-doc',cd.map(([l,n])=>[l,n,n]),cd[0]?.[1]);
+ if(R.length){hist('h-lac',R.map(r=>r.lac),12,'Lactate');hist('h-temp',R.map(r=>r.temp),12,'Temperature');}
+ const mo={};R.forEach(r=>{const k=r.admission_date.slice(0,7);mo[k]=(mo[k]||0)+1;});const me=Object.entries(mo).sort();bars('r-month',me.map(([l,n])=>[l,n,n]),Math.max(...me.map(x=>x[1]),1));
+ $('r-dq').innerHTML=`In the whole file <b>${REAL.filter(r=>r.sepsis_flag==='Yes').length}</b> of ${REAL.length} patients have <code>sepsis_flag = Yes</code>, yet <b>${REAL.filter(screenPos).length}</b> meet a simple vitals screen (lactate &gt; 2.5 or temperature ≥ 38.5 °C). *The screen is a teaching rule, not a clinical diagnosis. Mention this inconsistency in your report as a data limitation.`;
+ $('r-table').innerHTML='<tr>'+['patient_id','admission_date','ward','doctor_on_duty','temperature_c','heart_rate','wbc_count','lactate_mmol_l','sepsis_flag'].map(h=>`<th>${h}</th>`).join('')+'</tr>'+R.slice(0,250).map(r=>'<tr>'+['patient_id','admission_date','ward','doctor_on_duty','temperature_c','heart_rate','wbc_count','lactate_mmol_l','sepsis_flag'].map(h=>`<td>${r[h]}</td>`).join('')+'</tr>').join('');}
+$('fWard').onchange=$('fDoc').onchange=renderReal;
+// ---------- EVENT LOG
+let LOG=[],CASES={},usingOwn=false;
+function buildLog(rows){LOG=rows.map(r=>({c:r.case_id,a:r.activity,t:new Date(r.timestamp.replace(' ','T')).getTime()})).filter(e=>e.c&&e.a&&!isNaN(e.t));
+ const m={};LOG.forEach(e=>(m[e.c]=m[e.c]||[]).push(e));CASES={};
+ for(const c in m){m[c].sort((x,y)=>x.t-y.t);const ev=m[c];CASES[c]={id:c,ev,seq:ev.map(e=>e.a),dur:(ev[ev.length-1].t-ev[0].t)/36e5};}
+ const mx=Math.ceil(Math.max(...Object.values(CASES).map(c=>c.dur),1));$('sMin').max=mx;$('sMin').value=0;$('vMin').textContent=0;
+ $('cl').innerHTML=Object.keys(CASES).slice(0,500).map(c=>`<option value="${c}">`).join('');}
+function selected(){const mn=+$('sMin').value,w=$('pWard').value,ty=$('pType').value;
+ return Object.values(CASES).filter(c=>{if(c.dur<mn)return false;const r=byId[c.id];if(!usingOwn&&r){if(w&&r.ward!==w)return false;if(ty==='sep'&&!screenPos(r))return false;if(ty==='non'&&screenPos(r))return false;}return true;});}
+const IDEAL=["ER Registration","ER Triage","Lab Tests","Doctor Review","Discharge"];
+const conforms=seq=>{let i=0;for(const a of seq)if(a===IDEAL[i])i++;return i===IDEAL.length;};
+function renderPM(){const C=selected();$('vMin').textContent=$('sMin').value;
+ const events=C.reduce((n,c)=>n+c.ev.length,0),acts=new Set(C.flatMap(c=>c.seq)),vm={};C.forEach(c=>{const k=c.seq.join(' → ');(vm[k]=vm[k]||[]).push(c);});
+ const vs=Object.entries(vm).sort((a,b)=>b[1].length-a[1].length);
+ const rw=C.filter(c=>new Set(c.seq).size<c.seq.length).length,cf=C.filter(c=>conforms(c.seq)).length;
+ $('p-kpis').innerHTML=kpi(C.length,'cases')+kpi(events,'events')+kpi(acts.size,'activities')+kpi(vs.length,'variants')+kpi(fmtH(median(C.map(c=>c.dur))),'median duration')+kpi(C.length?(100*rw/C.length).toFixed(1)+'%':'–','cases with rework')+kpi(C.length?(100*cf/C.length).toFixed(1)+'%':'–','conformant');
+ $('p-var').innerHTML=vs.slice(0,8).map(([k,a],i)=>`<div style="margin:6px 0"><b>#${i+1}</b> · ${a.length} cases (${(100*a.length/C.length).toFixed(1)}%)<div>${k.split(' → ').map(x=>`<span class="chip">${x}</span>`).join('→')}</div></div>`).join('')||'<span class="small">No cases</span>';
+ if(C.length)hist('p-hist',C.map(c=>c.dur),20,'Hours');else $('p-hist').innerHTML='';
+ // transitions
+ const tr={};C.forEach(c=>{for(let i=0;i<c.ev.length-1;i++){const k=c.ev[i].a+'\u0001'+c.ev[i+1].a;(tr[k]=tr[k]||[]).push((c.ev[i+1].t-c.ev[i].t)/6e4);}});
+ const trs=Object.entries(tr).map(([k,v])=>({a:k.split('\u0001')[0],b:k.split('\u0001')[1],n:v.length,m:mean(v)}));
+ const bot=[...trs].filter(x=>x.n>=3).sort((a,b)=>b.m-a.m).slice(0,8);bars('p-bot',bot.map(x=>[x.a+' → '+x.b,x.m,fmtM(x.m)+' (n='+x.n+')']),bot[0]?.m,true);
+ const rc={};C.forEach(c=>{const m={};c.seq.forEach(a=>m[a]=(m[a]||0)+1);for(const a in m)if(m[a]>1)rc[a]=(rc[a]||0)+1;});const re=Object.entries(rc).sort((a,b)=>b[1]-a[1]);bars('p-rew',re.map(([a,n])=>[a,n,n+' cases']),re[0]?.[1]);
+ const bad=C.length-cf;$('p-conf').innerHTML=`<div class="bar"><div class="l">Conformant</div><div class="t"><div class="f" style="width:${C.length?100*cf/C.length:0}%"></div></div><div class="v">${cf} cases</div></div><div class="bar"><div class="l">Deviating</div><div class="t"><div class="f w" style="width:${C.length?100*bad/C.length:0}%"></div></div><div class="v">${bad} cases</div></div>`;
+ drawDFG(trs,C);}
+function drawDFG(trs,C){if(!trs.length){$('p-dfg').innerHTML='';return;}
+ const pos={},cnt={};C.forEach(c=>c.seq.forEach((a,i)=>{(pos[a]=pos[a]||[]).push(i/(c.seq.length-1||1));cnt[a]=(cnt[a]||0)+1;}));
+ const nodes=Object.keys(pos).sort((a,b)=>mean(pos[a])-mean(pos[b]));const W=Math.max(900,nodes.length*120),H=420,ys={},step=W/(nodes.length);
+ const col={};nodes.forEach((a,i)=>{col[a]=i;});
+ const nx=a=>step*col[a]+step/2;const rowFor={};nodes.forEach((a,i)=>rowFor[a]=(i%2)?250:130);
+ const mx=Math.max(...trs.map(t=>t.n));
+ let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><defs><marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L8,4L0,8z" fill="#167080"/></marker></defs>`;
+ trs.forEach(t=>{const x1=nx(t.a),y1=rowFor[t.a],x2=nx(t.b),y2=rowFor[t.b];const back=col[t.b]<=col[t.a];const mid=back?(Math.min(y1,y2)-80-10*Math.abs(col[t.a]-col[t.b])):(y1+y2)/2+(col[t.b]-col[t.a]>1?-70*(col[t.b]-col[t.a]-1)/2*(rowFor[t.a]==130?1:-1)*0.5:0);
+  s+=`<path d="M${x1},${y1} Q${(x1+x2)/2},${mid} ${x2},${y2}" fill="none" stroke="${back?'#C2410C':'#167080'}" stroke-opacity=".55" stroke-width="${1+7*t.n/mx}" marker-end="url(#ar)"><title>${t.a} → ${t.b}\n${t.n} times · mean wait ${fmtM(t.m)}</title></path>`;});
+ nodes.forEach(a=>{const x=nx(a),y=rowFor[a];s+=`<rect x="${x-52}" y="${y-18}" width="104" height="36" rx="8" fill="#0F2A3D" stroke="#5CC8D4"/><text x="${x}" y="${y-2}" text-anchor="middle" style="fill:#fff;font-weight:700;font-size:11px">${a.length>16?a.slice(0,15)+'…':a}</text><text x="${x}" y="${y+12}" text-anchor="middle" style="fill:#9fd7de;font-size:10px">${cnt[a]} events</text>`;});
+ $('p-dfg').innerHTML=s+'</svg><div class="small">Orange curves go backwards = loops / rework.</div>';}
+['sMin','pWard','pType'].forEach(i=>$(i).oninput=renderPM);
+// ---------- CASE EXPLORER
+function showCase(id){const c=CASES[id];if(!c){$('c-out').innerHTML='<span class="small">Case not found.</span>';return;}const r=byId[id];const seen={};
+ let h=`<h3>${id} · ${c.ev.length} steps · total ${fmtH(c.dur)}</h3>`;
+ if(r&&!usingOwn)h+=`<p class="small"><span class="tag real">REAL</span> ward ${r.ward} · ${r.doctor_on_duty} · temp ${r.temp} °C · HR ${r.hr} · WBC ${r.wbc} · lactate ${r.lac} · sepsis_flag ${r.sepsis_flag}</p>`;
+ c.ev.forEach((e,i)=>{seen[e.a]=(seen[e.a]||0)+1;const w=i?(e.t-c.ev[i-1].t)/6e4:null;h+=`<div class="ev ${seen[e.a]>1?'re':''}"><b>${e.a}</b>${seen[e.a]>1?' <span class="tag sim">repeat</span>':''}<br><small>${new Date(e.t).toISOString().replace('T',' ').slice(0,16)}</small>${w!==null?` <span class="wt">· waited ${fmtM(w)}</span>`:''}</div>`;});
+ $('c-out').innerHTML=h;}
+$('cSearch').onchange=e=>showCase(e.target.value.trim());
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+$('cRand').onclick=()=>{const id=pick(Object.keys(CASES));$('cSearch').value=id;showCase(id);};
+$('cRew').onclick=()=>{const a=Object.values(CASES).filter(c=>new Set(c.seq).size<c.seq.length);if(a.length){const id=pick(a).id;$('cSearch').value=id;showCase(id);}};
+// ---------- OWN
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{const rows=parseCSV(t);if(!rows.length||!('case_id' in rows[0]&&'activity' in rows[0]&&'timestamp' in rows[0])){$('own-msg').textContent='Need columns case_id, activity, timestamp.';return;}usingOwn=true;buildLog(rows);renderPM();ov();$('cRand').click();$('own-msg').textContent=`Loaded ${Object.keys(CASES).length} cases, ${LOG.length} events. Ward/pathway filters apply only to the built-in log.`;});};
+$('reset').onclick=()=>{usingOwn=false;buildLog(parseCSV(LOG_CSV));renderPM();ov();$('own-msg').textContent='Reset to simulated log.';};
+function ov(){$('ov-kpis').innerHTML=kpi(REAL.length,'real patients')+kpi(Object.keys(CASES).length,(usingOwn?'cases (your log)':'simulated cases'))+kpi(LOG.length,'events')+kpi(new Set(LOG.map(e=>e.a)).size,'activities');}
+buildLog(parseCSV(LOG_CSV));renderReal();renderPM();ov();$('cRand').click();
+</script></body></html>
