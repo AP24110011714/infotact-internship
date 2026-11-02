@@ -28,3 +28,8 @@ clinical conclusions.
 ## Limitations
 - Event log is simulated; conformance is a simplified order check, not token replay.
 - Replace the simulated log with a real event log when one is available.
+
+## Next Steps
+- Re-run all analysis scripts after any change to the event log.
+- Run python -m pytest tests -v before every submission.
+- Compare dashboard figures with the exported CSV files to confirm they match.
