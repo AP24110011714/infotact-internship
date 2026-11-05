@@ -1,6 +1,4 @@
 pandas
-numpy
+openpyxl
 streamlit
-pm4py
-matplotlib
-plotly
+pytest

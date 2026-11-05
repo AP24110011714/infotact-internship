@@ -1,90 +1,148 @@
+"""Streamlit dashboard for the patient-level CareFlow clinical dataset."""
+
+import json
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
-P = "data/processed/"
 
-st.set_page_config(page_title="CareFlow Dashboard", layout="wide")
-st.title("CareFlow: Clinical Pathway Process Mining")
-st.caption("Analysis of the Sepsis hospital event log")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = PROJECT_ROOT / "data" / "processed"
 
+st.set_page_config(page_title="CareFlow Clinical Dashboard", layout="wide")
+st.title("CareFlow: Sepsis Clinical Data Overview")
+st.caption(
+    "Descriptive patient-level summaries. This dataset does not contain event "
+    "sequences or timestamps for process mining."
+)
 
-@st.cache_data
-def load(name):
-    return pd.read_csv(P + name)
-
-
-dur = load("case_durations.csv")
-var = load("variants.csv")
-wait = load("transition_waiting_times.csv")
-rep = load("repeated_activities_by_case.csv")
-
-total = len(dur)
-rework_cases = rep.iloc[:, 0].nunique()
-
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Total cases", f"{total:,}")
-c2.metric("Median duration (hours)", f"{dur['duration_hours'].median():.2f}")
-c3.metric("Unique variants", f"{len(var):,}")
-c4.metric("Cases with rework", f"{rework_cases / total * 100:.1f}%")
-
-st.subheader("Longest cases")
-st.dataframe(dur.sort_values("duration_hours", ascending=False).head(10),
-              use_container_width=True)
-
-st.subheader("Slowest transitions")
-st.dataframe(wait.head(10), use_container_width=True)
-
-st.subheader("Most common patient pathways (variants)")
-
-top_n = st.slider("Number of variants to show", 3, 15, 10)
-top = var.head(top_n).copy()
-top["label"] = [f"V{i + 1}" for i in range(len(top))]
-
-st.bar_chart(top.set_index("label")["cases"])
-
-st.caption("Each bar is one pathway. V1 is the most common. "
-           "Full sequences are listed below.")
-st.dataframe(top[["label", "variant", "cases", "percent"]],
-             use_container_width=True)
-
-q = X_scaled['Insulin'].quantile(.95)
-mask = X_scaled['Insulin'] < q
-dataNew = X_scaled[mask]
-y_outlier_detection = y_outlier_detection[mask]
-
-# ---- Sidebar filters ----
-st.sidebar.header("Filters")
-
-max_h = float(dur["duration_hours"].max())
-hours = st.sidebar.slider("Case duration (hours)", 0.0, max_h, (0.0, max_h))
-dur = dur[dur["duration_hours"].between(hours[0], hours[1])]
-rep = rep[rep.iloc[:, 0].isin(dur.iloc[:, 0])]
-
-acts = sorted(set(wait["from"]).union(wait["to"]))
-chosen = st.sidebar.multiselect("Show transitions involving these activities", acts)
-if chosen:
-    wait = wait[wait["from"].isin(chosen) | wait["to"].isin(chosen)]
-
-if dur.empty:
-    st.warning("No cases match the selected filters.")
+summary_path = DATA_DIR / "summary.json"
+required_files = {
+    "cleaned dataset": DATA_DIR / "Sepsis_Dataset_cleaned.csv",
+    "analysis summary": summary_path,
+    "clinical measurements": DATA_DIR / "clinical_metrics_summary.csv",
+    "ward summary": DATA_DIR / "ward_summary.csv",
+    "sepsis summary": DATA_DIR / "sepsis_summary.csv",
+}
+missing_files = [label for label, path in required_files.items() if not path.is_file()]
+if missing_files:
+    st.error(
+        "Analysis outputs are missing: "
+        + ", ".join(missing_files)
+        + ". Run `python main.py` from the project folder, then refresh this page."
+    )
     st.stop()
-    st.subheader("Conformance to the ideal pathway")
 
-    conf = load("conformance_results.csv")
-    ok = int(conf["conforms"].sum())
-    n = len(conf)
-    
-    k1, k2, k3 = st.columns(3)
-    k1.metric("Conforming cases", f"{ok:,}")
-    k2.metric("Non-conforming cases", f"{n - ok:,}")
-    k3.metric("Conformance rate", f"{ok / n * 100:.1f}%")
-    
-    dev = (conf.loc[~conf["conforms"], "missing_or_out_of_order"]
-           .value_counts().head(10).rename("cases"))
-    if not dev.empty:
-        st.bar_chart(dev)
-        st.caption("Most common deviations: key steps that are missing or out "
-                   "of order. This is a simplified order check, not a full "
-                   "token-based replay.")
-    
-    st.dataframe(conf[~conf["conforms"]].head(50), use_container_width=True)
+try:
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    patients = pd.read_csv(required_files["cleaned dataset"], parse_dates=["admission_date"])
+    metrics = pd.read_csv(required_files["clinical measurements"])
+    wards = pd.read_csv(required_files["ward summary"])
+    sepsis = pd.read_csv(required_files["sepsis summary"])
+    grouped_metrics_path = DATA_DIR / "clinical_metrics_by_sepsis.csv"
+    grouped_metrics = pd.read_csv(grouped_metrics_path) if grouped_metrics_path.is_file() else pd.DataFrame()
+except (OSError, ValueError, json.JSONDecodeError, pd.errors.ParserError) as exc:
+    st.error(f"Could not load generated analysis outputs: {exc}")
+    st.stop()
+
+if patients.empty:
+    st.error("The cleaned dataset contains no patient records. Check the source file and rerun `python main.py`.")
+    st.stop()
+
+left, right = st.columns(2)
+with left:
+    selected_wards = st.multiselect("Filter by ward", sorted(patients["ward"].dropna().unique()) if "ward" in patients else [])
+with right:
+    selected_statuses = st.multiselect(
+        "Filter by sepsis status",
+        sorted(patients["sepsis_flag"].dropna().unique()) if "sepsis_flag" in patients else [],
+    )
+
+filtered = patients.copy()
+if selected_wards and "ward" in filtered.columns:
+    filtered = filtered[filtered["ward"].isin(selected_wards)]
+if selected_statuses and "sepsis_flag" in filtered.columns:
+    filtered = filtered[filtered["sepsis_flag"].isin(selected_statuses)]
+
+if filtered.empty:
+    st.warning("No patients match the selected filters.")
+    st.stop()
+
+metric_columns = st.columns(4)
+metric_columns[0].metric("Patients", f"{filtered['patient_id'].nunique():,}")
+metric_columns[1].metric(
+    "Sepsis positive",
+    f"{int((filtered['sepsis_flag'] == 'Yes').sum()):,}" if "sepsis_flag" in filtered else "N/A",
+)
+known_statuses = filtered["sepsis_flag"].isin(["Yes", "No"]) if "sepsis_flag" in filtered else pd.Series(dtype=bool)
+known_count = int(known_statuses.sum())
+if known_count:
+    rate = (filtered.loc[known_statuses, "sepsis_flag"] == "Yes").mean() * 100
+    rate_display = f"{rate:.1f}%"
+else:
+    rate_display = "N/A"
+metric_columns[2].metric("Sepsis rate (known status)", rate_display)
+metric_columns[3].metric(
+    "Admission dates",
+    f"{filtered['admission_date'].min():%Y-%m-%d} – {filtered['admission_date'].max():%Y-%m-%d}",
+)
+
+st.subheader("Clinical measurements")
+available_metrics = metrics[metrics["metric"].isin(filtered.columns)].copy()
+if available_metrics.empty:
+    st.info("No supported clinical measurement columns are available.")
+else:
+    chosen_metric = st.selectbox(
+        "Choose a measurement",
+        available_metrics["metric"].tolist(),
+        format_func=lambda key: available_metrics.loc[
+            available_metrics["metric"] == key, "label"
+        ].iloc[0],
+    )
+    metric_row = available_metrics.loc[available_metrics["metric"] == chosen_metric].iloc[0]
+    measure = pd.to_numeric(filtered[chosen_metric], errors="coerce").dropna()
+    if measure.empty:
+        st.info("No valid values are available for this measurement under the current filters.")
+    else:
+        stat_cols = st.columns(4)
+        stat_cols[0].metric("Valid values", f"{len(measure):,}")
+        stat_cols[1].metric("Mean", f"{measure.mean():.2f} {metric_row['unit']}")
+        stat_cols[2].metric("Median", f"{measure.median():.2f} {metric_row['unit']}")
+        stat_cols[3].metric("Missing", f"{len(filtered) - len(measure):,}")
+        st.bar_chart(measure.rename(metric_row["label"]))
+        if not grouped_metrics.empty and not selected_wards and not selected_statuses:
+            subset = grouped_metrics[grouped_metrics["metric"] == chosen_metric]
+            subset = subset[subset["patients"] > 0].set_index("sepsis_status")
+            if not subset.empty:
+                st.caption("Measurement averages by sepsis status")
+                st.bar_chart(subset["mean"])
+
+st.subheader("Patients by ward")
+if "ward" in filtered.columns:
+    ward_counts = filtered.groupby("ward")["patient_id"].nunique().sort_values(ascending=False)
+    if not ward_counts.empty:
+        st.bar_chart(ward_counts)
+    st.dataframe(
+        wards[wards["ward"].isin(filtered["ward"].unique())],
+        width="stretch",
+        hide_index=True,
+    )
+
+st.subheader("Sepsis status distribution")
+if "sepsis_flag" in filtered.columns:
+    status_counts = filtered["sepsis_flag"].fillna("Unknown").value_counts()
+    st.bar_chart(status_counts)
+
+st.subheader("Patient records")
+display_columns = [column for column in patients.columns if column in filtered.columns]
+st.dataframe(
+    filtered[display_columns].sort_values("admission_date", ascending=False),
+    width="stretch",
+    hide_index=True,
+)
+
+st.caption(
+    f"Source range: {summary['earliest_admission']} to {summary['latest_admission']}. "
+    "Descriptive results only; they do not establish diagnosis, cause, or care quality."
+)

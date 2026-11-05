@@ -1,0 +1,7 @@
+metric,label,unit,valid_values,missing_values,mean,median,minimum,maximum
+temperature_c,Temperature,°C,250,0,36.9932,37.1,33.1,42.8
+bp_systolic,Systolic blood pressure,mmHg,250,0,115.324,115.0,50.0,177.0
+bp_diastolic,Diastolic blood pressure,mmHg,250,0,74.188,74.0,43.0,106.0
+heart_rate,Heart rate,bpm,250,0,91.288,91.5,27.0,154.0
+wbc_count,White blood cell count,10^9/L,246,4,7.54349593495935,7.4,0.0,16.0
+lactate_mmol_l,Lactate,mmol/L,244,6,1.9618852459016394,1.95,0.0,4.4

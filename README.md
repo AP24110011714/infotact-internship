@@ -1,132 +1,112 @@
-# CareFlow: Clinical Pathway Process Mining
+# CareFlow: Sepsis Clinical Data Overview
 
-**An Internship Project at Infotact Solutions | Data Analytics**
+**Infotact Solutions internship project | Data analytics**
 
-## Project Overview
+CareFlow cleans and explores the supplied patient-level sepsis dataset. The workbook contains one record per patient with an admission date, clinical measurements, a sepsis flag, ward, and doctor. It is **not an event log**: it has no sequence of care activities or event timestamps, so process variants, waiting times, rework, and conformance cannot be measured from this source. The project does not fabricate those fields.
 
-CareFlow is a process mining project that analyzes patient-care pathways in a hospital using an event log. It cleans the data, discovers the most common pathways, measures how long cases and individual steps take, and flags repeated activities that may point to workflow inefficiencies. Results are shown in a Streamlit dashboard.
+## What the project does
 
-## Objectives
+- Standardizes column names and common patient, date, and flag values.
+- Removes records without a usable patient ID or admission date and duplicate patient IDs.
+- Converts out-of-range clinical measurements to missing values, retaining the patient record and reporting invalid values.
+- Summarizes sepsis status, clinical measurements, and patient counts by ward.
+- Produces a generated findings report and a Streamlit dashboard with filters and descriptive views.
 
-- Clean, preprocess, and validate the hospital event log.
-- Discover common clinical pathways (process variants).
-- Calculate total case duration and the waiting time between activities.
-- Identify transitions with long delays (potential bottlenecks).
-- Detect repeated activities and process loops.
-- Present the results in an interactive dashboard.
-
-## Technologies Used
-
-| Technology | Purpose |
-| --- | --- |
-| Python | Data processing and analysis |
-| Pandas | Data cleaning and manipulation |
-| PM4Py | Process mining (directly-follows graph) |
-| Streamlit | Interactive dashboard |
-| Git and GitHub | Version control |
+All outputs are descriptive. They do not diagnose sepsis, establish causes, or evaluate care quality. Review the supplied source and its labels before interpreting results.
 
 ## Dataset
 
-The project uses the **Sepsis Cases event log**, a public, de-identified hospital event log. Each case is one patient's pathway, and each row is one recorded activity.
-
-The cleaned log in `data/processed/` uses these core fields:
+The source workbook is `Sepsis_Dataset ....xlsx`. The cleaned file contains standardized columns including:
 
 | Column | Description |
 | --- | --- |
-| `case_id` | Unique identifier for a patient case |
-| `activity` | Clinical or administrative activity |
-| `timestamp` | Date and time the activity occurred |
+| `patient_id` | Patient record identifier |
+| `admission_date` | Admission date |
+| `temperature_c`, `bp_systolic`, `bp_diastolic` | Temperature and blood-pressure measurements |
+| `heart_rate`, `wbc_count`, `lactate_mmol_l` | Clinical measurements |
+| `sepsis_flag` | Normalized Yes/No status; unrecognized or missing values remain unknown |
+| `ward`, `doctor_on_duty` | Admission context |
 
-> Check the exact column names in your cleaned file and update this table if they differ.
+The current supplied workbook has 250 records and all 250 sepsis flags are `No`. Therefore positive-versus-negative comparisons are not currently possible. Do not treat this distribution as proof that the dataset is representative or clinically complete.
 
-**Data privacy:** The dataset is public and de-identified. No personally identifiable patient information is included in this repository.
+## Setup
 
-## Project Structure
+Requires Python 3.10 or newer.
 
-```
-infotact-internship/
-├── data/
-│   └── processed/                 # Cleaned data and analysis outputs (CSV)
-├── dashboard/
-│   └── app.py                     # Streamlit dashboard
-├── docs/
-│   └── findings.md                # Key findings generated from the results
-├── Sepsis_Dataset ....xlsx        # Original dataset
-├── data_cleaning.py               # Clean and validate the event log
-├── variants_analysis.py           # Most common patient pathways
-├── main.py                        # Directly-follows graph with PM4Py
-├── case_duration.py               # Total duration of each case
-├── Waiting_time.py                # Waiting time between activities
-├── rework_analysis.py             # Repeated activities and loops
-├── export_findings.py             # Generate docs/findings.md
-├── Member1_Data_Collection_and_Data_Cleaning_Report.md
-├── requirements.txt
-└── README.md
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
-## Installation and Setup
+## Run the full workflow
 
-**Prerequisites:** Python 3.10 or newer, and Git.
+From the project directory:
 
-```bash
-git clone https://github.com/AP24110011714/infotact-internship.git
-cd infotact-internship
-python -m venv venv
-venv\Scripts\activate          # Windows
-pip install -r requirements.txt
+```powershell
+python main.py
 ```
 
-## How to Run
+The default input and outputs are located relative to the project, so the command works regardless of the current directory. Optional paths:
 
-Run the scripts from the repository's main folder, in this order:
+```powershell
+python main.py --input "path\to\source.xlsx" --output-dir "path\to\processed" --findings "path\to\findings.md"
+```
 
-| Step | Command | What it does |
-| --- | --- | --- |
-| 1 | `python data_cleaning.py` | Cleans the dataset and saves it to `data/processed/` |
-| 2 | `python variants_analysis.py` | Finds the most common pathways |
-| 3 | `python main.py` | Builds the directly-follows graph |
-| 4 | `python case_duration.py` | Calculates the duration of each case |
-| 5 | `python Waiting_time.py` | Calculates waiting time between activities |
-| 6 | `python rework_analysis.py` | Detects repeated activities |
-| 7 | `python export_findings.py` | Writes `docs/findings.md` |
-| 8 | `streamlit run dashboard/app.py` | Opens the dashboard |
+The cleaning script can also be run alone:
 
-Each script saves its results as CSV files in `data/processed/`. Check the script's code for the exact output file names.
-
-## Analysis Overview
-
-1. **Data cleaning:** handles duplicates, missing values, and timestamp formats, and orders events by case and time.
-2. **Process variants:** groups each case's activity sequence and counts how often each pathway occurs.
-3. **Directly-follows graph:** shows which activity directly follows which, and how often.
-4. **Case duration:** time from the first to the last event of each case.
-5. **Waiting times:** time between consecutive activities, summarized per transition (mean, median, 90th percentile).
-6. **Rework detection:** finds activities that occur more than once in a case.
-
-Key numbers from the analysis are written to `docs/findings.md`.
+```powershell
+python data_cleaning.py
+```
 
 ## Dashboard
 
-The Streamlit dashboard (`dashboard/app.py`) shows KPI cards (total cases, median duration, number of variants, share of cases with rework) and tables of the longest cases and slowest transitions. More charts are being added.
+Generate the outputs with `python main.py`, then launch:
 
-## Project Status
+```powershell
+python -m streamlit run dashboard/app.py
+```
 
-| Phase | Status |
+The dashboard shows patient counts, sepsis status, descriptive clinical measurements, ward counts, and patient records. It reports missing outputs with instructions instead of failing on missing analysis files.
+
+## Generated files
+
+`data/processed/` contains:
+
+- `Sepsis_Dataset_cleaned.csv`
+- `summary.json`
+- `sepsis_summary.csv`
+- `ward_summary.csv`
+- `clinical_metrics_summary.csv`
+- `clinical_metrics_by_sepsis.csv`
+- `missingness_summary.csv`
+
+`docs/findings.md` contains a generated summary with data-quality counts and interpretation notes.
+
+## Tests
+
+```powershell
+python -m pytest -q
+```
+
+Tests cover data normalization, invalid measurement handling, duplicate/missing required records, analysis outputs, and the repository workbook pipeline.
+
+## Project status
+
+| Area | Status |
 | --- | --- |
-| Data collection and cleaning | Done |
-| Pathway, duration, waiting-time and rework analysis | Done |
-| Dashboard skeleton | Done |
-| Dashboard charts and filters | In progress |
-| Final report and presentation | Planned |
+| Patient-level data cleaning | Implemented and tested |
+| Descriptive summaries | Implemented and tested |
+| Dashboard | Implemented |
+| Findings report | Generated by the pipeline |
+| Process mining | Not applicable to the supplied patient-level workbook; requires a real event log |
+| Final presentation | Not included |
 
-## Notes
-
-Long waits and repeated activities are signals to examine, not proof of poor clinical care. This project is for educational and analytics purposes and does not provide medical advice.
-
-## Internship Information
+## Internship
 
 - **Organization:** Infotact Solutions
 - **Domain:** Data Analytics
-- **Project:** CareFlow: Clinical Pathway Process Mining
+- **Project:** CareFlow clinical data overview
 - **Project start date:** 10 October 2026
 
 ## Authors

@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
-"""
-Clean and standardize the Infotact sepsis dataset.
+"""Clean and standardize the patient-level Infotact sepsis dataset."""
 
-This script reads the raw Excel file in the repository and creates a cleaned CSV.
-It removes duplicate patient IDs, standardizes column names, parses dates,
-validates numeric clinical fields, and writes a cleaned dataset ready for analysis.
-
-Usage:
-    python data_cleaning.py "Sepsis_Dataset ....xlsx" "Sepsis_Dataset_cleaned.csv"
-"""
-
-import os
-import sys
+import argparse
 import re
 from pathlib import Path
 
@@ -19,23 +9,27 @@ import pandas as pd
 
 
 VALID_RANGES = {
-    "Temperature_C": (30.0, 45.0),
-    "BP_Systolic": (50.0, 200.0),
-    "BP_Diastolic": (30.0, 130.0),
-    "Heart_Rate": (20.0, 220.0),
-    "WBC_Count": (0.0, 40.0),
-    "Lactate_mmol_L": (0.0, 10.0),
+    "temperature_c": (30.0, 45.0),
+    "bp_systolic": (50.0, 200.0),
+    "bp_diastolic": (30.0, 130.0),
+    "heart_rate": (20.0, 220.0),
+    "wbc_count": (0.0, 40.0),
+    "lactate_mmol_l": (0.0, 10.0),
 }
 
+PROJECT_ROOT = Path(__file__).resolve().parent
+DEFAULT_INPUT = PROJECT_ROOT / "Sepsis_Dataset ....xlsx"
+DEFAULT_OUTPUT = PROJECT_ROOT / "data" / "processed" / "Sepsis_Dataset_cleaned.csv"
 
-def normalize_column_name(name):
+
+def normalize_column_name(name: object) -> str:
     text = str(name).strip().lower()
     text = re.sub(r"[^a-z0-9]+", "_", text)
     text = re.sub(r"_+", "_", text).strip("_")
     return text
 
 
-def load_dataset(path):
+def load_dataset(path: str | Path) -> pd.DataFrame:
     path = Path(path)
     if path.suffix.lower() == ".csv":
         return pd.read_csv(path)
@@ -44,13 +38,13 @@ def load_dataset(path):
     raise ValueError(f"Unsupported file type: {path.suffix}")
 
 
-def standardize_columns(df):
+def standardize_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df.columns = [normalize_column_name(c) for c in df.columns]
     return df
 
 
-def map_expected_columns(df):
+def map_expected_columns(df: pd.DataFrame) -> pd.DataFrame:
     mapping = {
         "patient_id": ["patient_id", "patient", "case_id", "case", "pid"],
         "admission_date": ["admission_date", "date", "admission", "visit_date"],
@@ -76,18 +70,17 @@ def map_expected_columns(df):
     return df.rename(columns=renamed)
 
 
-def clean_patient_id(series):
-    s = series.astype(str).str.strip().str.upper()
-    s = s.replace({"NAN": pd.NA, "NONE": pd.NA, "NULL": pd.NA})
-    s = s.replace(r"^\s*$", pd.NA, regex=True)
-    return s
+def clean_patient_id(series: pd.Series) -> pd.Series:
+    return series.astype("string").str.strip().str.upper().replace(
+        {"": pd.NA, "NAN": pd.NA, "NONE": pd.NA, "NULL": pd.NA}
+    )
 
 
-def clean_date(series):
+def clean_date(series: pd.Series) -> pd.Series:
     return pd.to_datetime(series, errors="coerce")
 
 
-def normalize_flag(series):
+def normalize_flag(series: pd.Series) -> pd.Series:
     s = series.astype(str).str.strip().str.lower()
     mapping = {
         "yes": "Yes",
@@ -101,28 +94,38 @@ def normalize_flag(series):
         "nan": pd.NA,
         "none": pd.NA,
         "null": pd.NA,
+        "": pd.NA,
     }
-    return s.map(mapping).fillna(s.str.title())
+    return s.map(mapping)
 
 
-def clean_text(series):
-    s = series.astype(str).str.strip()
-    s = s.replace({"nan": pd.NA, "none": pd.NA, "null": pd.NA})
-    s = s.replace(r"^\s*$", pd.NA, regex=True)
-    return s
+def clean_text(series: pd.Series) -> pd.Series:
+    return (
+        series.astype("string")
+        .str.strip()
+        .replace({"": pd.NA, "nan": pd.NA, "none": pd.NA, "null": pd.NA})
+    )
 
 
-def validate_numeric_columns(df):
+def validate_numeric_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, int]]:
     cleaned = df.copy()
+    invalid_by_column = {}
     for column, (low, high) in VALID_RANGES.items():
         if column in cleaned.columns:
-            cleaned[column] = pd.to_numeric(cleaned[column], errors="coerce")
-            cleaned = cleaned[cleaned[column].between(low, high) | cleaned[column].isna()].copy()
-    return cleaned
+            original = cleaned[column]
+            values = pd.to_numeric(original, errors="coerce")
+            invalid = original.notna() & (values.isna() | ~values.between(low, high))
+            invalid_by_column[column] = int(invalid.sum())
+            cleaned[column] = values.mask(invalid)
+    return cleaned, invalid_by_column
 
 
-def clean_dataset(raw_path: str, output_path: str):
-    df = load_dataset(raw_path)
+def clean_dataset(
+    raw_path: str | Path, output_path: str | Path
+) -> tuple[pd.DataFrame, dict[str, object]]:
+    raw_df = load_dataset(raw_path)
+    raw_rows = len(raw_df)
+    df = raw_df
     df = standardize_columns(df)
     df = map_expected_columns(df)
 
@@ -134,32 +137,25 @@ def clean_dataset(raw_path: str, output_path: str):
     df["patient_id"] = clean_patient_id(df["patient_id"])
     df["admission_date"] = clean_date(df["admission_date"])
 
-    # Remove rows with missing patient ID or admission date.
-    df = df[df["patient_id"].notna()].copy()
-    df = df[df["admission_date"].notna()].copy()
+    invalid_required = df["patient_id"].isna() | df["admission_date"].isna()
+    required_rows_removed = int(invalid_required.sum())
+    df = df.loc[~invalid_required].copy()
 
     for col in ["ward", "doctor_on_duty"]:
         if col in df.columns:
             df[col] = clean_text(df[col]).fillna("Unknown")
-            df[col] = df[col].str.title()
 
     if "sepsis_flag" in df.columns:
         df["sepsis_flag"] = normalize_flag(df["sepsis_flag"])
 
-    # Remove duplicates based on patient ID.
     before_dup = len(df)
     df = df.drop_duplicates(subset=["patient_id"], keep="first").copy()
     dup_removed = before_dup - len(df)
 
-    # Validate numeric fields and drop clinically invalid values.
-    before_num = len(df)
-    df = validate_numeric_columns(df)
-    num_removed = before_num - len(df)
+    df, invalid_numeric_by_column = validate_numeric_columns(df)
 
-    # Sort final dataset for readability.
     df = df.sort_values(["admission_date", "patient_id"]).reset_index(drop=True)
 
-    # Standardize output column order.
     preferred_order = [
         "patient_id",
         "admission_date",
@@ -173,7 +169,9 @@ def clean_dataset(raw_path: str, output_path: str):
         "ward",
         "doctor_on_duty",
     ]
-    final_columns = [c for c in preferred_order if c in df.columns] + [c for c in df.columns if c not in preferred_order]
+    final_columns = [c for c in preferred_order if c in df.columns] + [
+        c for c in df.columns if c not in preferred_order
+    ]
     df = df[final_columns]
 
     output = Path(output_path)
@@ -181,10 +179,12 @@ def clean_dataset(raw_path: str, output_path: str):
     df.to_csv(output, index=False)
 
     report = {
-        "raw_rows": before_dup + num_removed,
+        "raw_rows": raw_rows,
         "final_rows": len(df),
+        "rows_missing_required_fields_removed": required_rows_removed,
         "duplicates_removed": dup_removed,
-        "invalid_numeric_rows_removed": num_removed,
+        "invalid_numeric_measurements_by_column": invalid_numeric_by_column,
+        "invalid_numeric_measurements": sum(invalid_numeric_by_column.values()),
         "unique_patients": int(df["patient_id"].nunique()),
         "earliest_admission": str(df["admission_date"].min()) if "admission_date" in df.columns and not df.empty else "N/A",
         "latest_admission": str(df["admission_date"].max()) if "admission_date" in df.columns and not df.empty else "N/A",
@@ -192,18 +192,15 @@ def clean_dataset(raw_path: str, output_path: str):
 
     return df, report
 
-
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python data_cleaning.py <raw_dataset.xlsx|csv> <cleaned_output.csv>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    args = parser.parse_args()
 
-    raw_path = sys.argv[1]
-    output_path = sys.argv[2]
+    if not args.input.is_file():
+        raise FileNotFoundError(f"Input file not found: {args.input}")
 
-    if not os.path.exists(raw_path):
-        raise FileNotFoundError(f"Input file not found: {raw_path}")
-
-    df, report = clean_dataset(raw_path, output_path)
-    print("Generated cleaned dataset:", output_path)
+    _, report = clean_dataset(args.input, args.output)
+    print("Generated cleaned dataset:", args.output)
     print(report)

@@ -1,0 +1,10 @@
+{
+  "total_patients": 250,
+  "total_records": 250,
+  "sepsis_positive": 0,
+  "sepsis_negative": 250,
+  "sepsis_unknown": 0,
+  "sepsis_rate_percent": 0.0,
+  "earliest_admission": "2023-01-02",
+  "latest_admission": "2024-01-01"
+}
