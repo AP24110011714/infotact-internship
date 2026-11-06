@@ -1,114 +1,97 @@
-\# CareFlow – Project Progress Report
+# CareFlow – Project Progress Report
 
-
-
-\## Project Overview
+## 1. Project Overview
 
 CareFlow is a Clinical Pathway Process Mining project that analyzes simulated Electronic Health Record (EHR) event logs to identify patient flow patterns, waiting times, and process bottlenecks.
 
+## 2. Completed Work
 
+### 2.1 Data Generation
+- Generated 3,058 raw event records.
+- Created 500 unique patient visits.
+- Introduced sample data-quality issues for validation testing.
 
-\## Completed Work
+### 2.2 Data Cleaning and Validation
+- Cleaned the generated event log.
+- Removed duplicate records.
+- Handled missing department values and invalid timestamps.
+- Prepared 3,055 cleaned records.
+- Successfully passed all 10 event-log validation checks.
 
+### 2.3 BigQuery Integration
+- Connected the Python pipeline to Google BigQuery.
+- Configured the CareFlow dataset.
+- Loaded 3,055 cleaned records into the `raw_ehr_events` table.
+- Verified that the BigQuery table contains all 3,055 records.
 
+### 2.4 Pipeline Automation
+- Implemented `pipeline/run_pipeline.py`.
+- Automated event generation and BigQuery loading.
+- Added execution logs, timing information, and error handling.
+- Added options for selective pipeline execution and dry-run testing.
 
-\### 1. Data Generation
+### 2.5 Process Performance Analysis
+- Analyzed 3,055 event records across 500 patient visits.
+- Calculated patient visit durations and transition waiting times.
+- Identified frequently occurring activities and slower process transitions.
+- Generated activity frequency and visit duration visualizations.
+- Created a bottleneck analysis report.
 
-\- Generated 3,058 raw event records.
+### 2.6 BigQuery Results Export
+- Implemented `pipeline/export_results.py`.
+- Exported 12 transition records.
+- Exported 63 loopback records.
+- Exported the KPI summary.
+- Generated a combined CareFlow summary containing 76 rows.
+- Successfully uploaded the combined summary to BigQuery.
 
-\- Created 500 unique patient visits.
+### 2.7 Dashboard Development
+- Developed a Streamlit dashboard in `dashboard/app.py`.
+- Added KPI cards, charts, filters, and CSV download functionality.
+- Created Docker configuration files.
+- Deployed the dashboard using Streamlit Community Cloud.
 
-\- Introduced sample data-quality issues for validation testing.
+### 2.8 Testing
+- Installed and configured pytest.
+- Executed the automated test suite.
+- Successfully passed all 5 tests:
+  - CareFlow summary existence.
+  - CSV readability.
+  - KPI summary existence.
+  - Loopbacks file existence.
+  - Transition times file existence.
 
+## 3. Current Verification Status
 
+| Component | Status |
+|---|---|
+| Data generation | Completed |
+| Data cleaning | Completed |
+| Event-log validation | 10 checks passed |
+| BigQuery integration | Verified |
+| Process performance analysis | Completed |
+| Bottleneck report | Generated |
+| BigQuery results export | Successful |
+| Streamlit dashboard | Deployed |
+| Automated tests | 5 tests passed |
+| Pipeline dry-run | Tested |
+| dbt integration | Pending |
+| Separate process-mining pipeline integration | Pending |
+| Complete end-to-end pipeline | Pending |
 
-\### 2. Data Cleaning and Validation
+## 4. Remaining Work
 
-\- Cleaned the generated event log.
+1. Improve the automated pipeline to include process analysis and results export.
+2. Verify and integrate the dbt component when the team implementation is available.
+3. Verify and integrate the separate process-mining component when available.
+4. Perform final dashboard and deployment checks.
+5. Complete end-to-end pipeline testing without unnecessarily overwriting existing BigQuery data.
+6. Update the final project documentation and GitHub repository.
 
-\- Removed duplicate records.
+## 5. Conclusion
 
-\- Handled missing department values and invalid timestamps.
+The CareFlow data generation, cleaning, validation, BigQuery integration, process performance analysis, results export, and dashboard development have been completed.
 
-\- Prepared 3,055 cleaned records for BigQuery loading.
+The latest verification confirms that 3,055 cleaned records were successfully loaded into BigQuery, analytical results were exported, and all five automated tests passed.
 
-
-
-\### 3. BigQuery Integration
-
-\- Connected the Python pipeline to Google BigQuery.
-
-\- Created and verified the CareFlow dataset.
-
-\- Loaded 3,055 cleaned records into the raw\_ehr\_events table.
-
-\- Verified the loaded row count.
-
-
-
-\### 4. Pipeline Automation
-
-\- Implemented pipeline/run\_pipeline.py.
-
-\- Automated event generation and BigQuery loading.
-
-\- Added execution logs, timing information, and error handling.
-
-\- Added options for selective pipeline execution.
-
-
-
-\### 5. Results Export
-
-\- Implemented pipeline/export\_results.py.
-
-\- Implemented BigQuery mart creation.
-
-\- Generated CSV exports for KPI summary, loopbacks, transition times, and combined CareFlow results.
-
-
-
-\### 6. Dashboard Development
-
-\- Developed a Streamlit dashboard in dashboard/app.py.
-
-\- Added Docker setup for application deployment.
-
-
-
-\## Current Verification Status
-
-\- Event generation: Successful.
-
-\- BigQuery loading: Successful.
-
-\- Dashboard implementation: Completed; runtime verification pending.
-
-\- dbt integration: Pending directory and teammate contribution verification.
-
-\- Process mining integration: Pending directory and teammate contribution verification.
-
-\- Automated tests and documentation: Further verification required.
-
-
-
-\## Next Steps
-
-1\. Verify dashboard execution and visualizations.
-
-2\. Integrate dbt transformations.
-
-3\. Integrate process mining analysis.
-
-4\. Verify BigQuery analytical tables.
-
-5\. Complete automated testing.
-
-6\. Perform end-to-end pipeline validation.
-
-
-
-\## Conclusion
-
-The data generation, validation, BigQuery loading, pipeline automation, results export implementation, and dashboard development have been completed. Remaining work focuses on integrating team components and final project validation.
-
+The remaining work focuses on pipeline integration, team component verification, and final project validation.
