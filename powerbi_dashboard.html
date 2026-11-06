@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareFlow - Microsoft Power BI Report</title>
+  <style>
+    :root {
+      --pbi-yellow: #f2c811;
+      --pbi-black: #111827;
+      --pbi-gray-dark: #242424;
+      --pbi-gray-light: #f3f2f1;
+      --pbi-border: #e1dfdd;
+      --pbi-accent: #107c41;
+      --pbi-blue: #0078d4;
+      --pbi-red: #d13438;
+      --pbi-pane: #faf9f8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background: #eae8e5;
+      color: #323130;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top Ribbon */
+    .pbi-app-bar {
+      background: #2b2b2b;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      height: 48px;
+      gap: 16px;
+      border-bottom: 2px solid var(--pbi-yellow);
+    }
+    .pbi-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      color: #fff;
+    }
+    .pbi-logo-icon {
+      width: 20px;
+      height: 20px;
+      background: var(--pbi-yellow);
+      border-radius: 3px;
+      display: grid;
+      place-items: center;
+      color: #000;
+      font-weight: 900;
+      font-size: 11px;
+    }
+    .report-title {
+      font-size: 14px;
+      color: #edebe9;
+      font-weight: 500;
+    }
+    .top-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+    .btn-top {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn-top:hover { background: rgba(255,255,255,0.2); }
+
+    /* Main Workspace */
+    .pbi-workspace {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Canvas Area */
+    .pbi-canvas-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #eae8e5;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .pbi-canvas {
+      background: #fff;
+      border: 1px solid var(--pbi-border);
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      min-height: 720px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Visual Grid */
+    .grid-row {
+      display: grid;
+      gap: 16px;
+    }
+    .kpi-row { grid-template-columns: repeat(5, 1fr); }
+    .main-row { grid-template-columns: 2fr 1fr; }
+
+    .pbi-card {
+      background: #fff;
+      border: 1px solid var(--pbi-border);
+      border-radius: 4px;
+      padding: 16px;
+      position: relative;
+    }
+    .pbi-card-header {
+      font-size: 12px;
+      color: #605e5c;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .pbi-card-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #201f1e;
+    }
+    .pbi-card-sub {
+      font-size: 11px;
+      color: #605e5c;
+      margin-top: 4px;
+    }
+    .pbi-card.highlight {
+      border-left: 4px solid var(--pbi-red);
+      background: #fff5f5;
+    }
+
+    /* Process Mining Visual */
+    .flow-container {
+      width: 100%;
+      height: 380px;
+      background: #faf9f8;
+      border: 1px dashed var(--pbi-border);
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Right Panes (Fields & Visualizations) */
+    .pbi-sidebar {
+      width: 280px;
+      background: var(--pbi-pane);
+      border-left: 1px solid var(--pbi-border);
+      display: flex;
+      flex-direction: column;
+      font-size: 12px;
+    }
+    .pane-header {
+      padding: 10px 14px;
+      background: #f3f2f1;
+      font-weight: 600;
+      color: #323130;
+      border-bottom: 1px solid var(--pbi-border);
+      display: flex;
+      justify-content: space-between;
+    }
+    .pane-body {
+      padding: 12px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .table-tree {
+      margin-bottom: 12px;
+    }
+    .table-tree-title {
+      font-weight: 600;
+      color: #201f1e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      margin-bottom: 4px;
+    }
+    .table-field {
+      margin-left: 18px;
+      color: #605e5c;
+      padding: 3px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .field-icon {
+      font-size: 10px;
+      color: #0078d4;
+    }
+
+    /* Page Tabs */
+    .pbi-page-bar {
+      height: 36px;
+      background: #fff;
+      border-top: 1px solid var(--pbi-border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 4px;
+    }
+    .page-tab {
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #605e5c;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+    }
+    .page-tab.active {
+      color: #0078d4;
+      border-bottom-color: #0078d4;
+      background: #f3f2f1;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: #f3f2f1; padding: 8px; text-align: left; border-bottom: 1px solid var(--pbi-border); color: #605e5c; }
+    td { padding: 8px; border-bottom: 1px solid var(--pbi-border); }
+  </style>
+</head>
+<body>
+
+  <!-- Power BI App Header -->
+  <div class="pbi-app-bar">
+    <div class="pbi-logo">
+      <div class="pbi-logo-icon">P</div>
+      <span>Power BI</span>
+    </div>
+    <span style="color: #605e5c;">|</span>
+    <span class="report-title">CareFlow_Clinical_Process_Mining.pbix</span>
+    <div class="top-actions">
+      <button class="btn-top" onclick="alert('Connected to Google BigQuery Warehouse (careflow_dw)')">🔗 BigQuery: Connected</button>
+      <button class="btn-top" onclick="alert('Exported Star-Schema from data/powerbi_export/')">📁 Source: Star Schema</button>
+      <button class="btn-top" style="background: var(--pbi-yellow); color: #000; font-weight: 700;">Published</button>
+    </div>
+  </div>
+
+  <!-- Workspace -->
+  <div class="pbi-workspace">
+    <!-- Center Report Canvas -->
+    <div class="pbi-canvas-container">
+      <div class="pbi-canvas">
+        
+        <!-- Header Strip inside Canvas -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #0078d4; padding-bottom: 8px;">
+          <div>
+            <h1 style="font-size: 20px; font-weight: 700; color: #201f1e;">CareFlow: Emergency Department Clinical Pathway Process Mining</h1>
+            <p style="font-size: 12px; color: #605e5c;">Hospital Operations Intelligence Report • Google BigQuery & PM4Py Integration</p>
+          </div>
+          <div style="font-size: 11px; color: #605e5c; text-align: right;">
+            Data Refreshed: Today • 5,000 Verified Cases
+          </div>
+        </div>
+
+        <!-- KPI Cards Row -->
+        <div class="grid-row kpi-row">
+          <div class="pbi-card highlight">
+            <div class="pbi-card-header">Missing Paperwork Loopback</div>
+            <div class="pbi-card-value" style="color: var(--pbi-red);">1,217</div>
+            <div class="pbi-card-sub">40.2% of X-Ray Patients</div>
+          </div>
+          <div class="pbi-card">
+            <div class="pbi-card-header">Total Events Ingested</div>
+            <div class="pbi-card-value">32,981</div>
+            <div class="pbi-card-sub">Chronological EHR Logs</div>
+          </div>
+          <div class="pbi-card">
+            <div class="pbi-card-header">Compliance Rate</div>
+            <div class="pbi-card-value" style="color: var(--pbi-accent);">75.66%</div>
+            <div class="pbi-card-sub">Fitness: 0.915 / 1.0</div>
+          </div>
+          <div class="pbi-card">
+            <div class="pbi-card-header">Lost Paperwork Hours</div>
+            <div class="pbi-card-value" style="color: #d83b01;">594.1 hrs</div>
+            <div class="pbi-card-sub">29.3 min Delay / Patient</div>
+          </div>
+          <div class="pbi-card">
+            <div class="pbi-card-header">Target Wait Reduction</div>
+            <div class="pbi-card-value" style="color: var(--pbi-blue);">-20.0 min</div>
+            <div class="pbi-card-sub">Instant Intake Form ROI</div>
+          </div>
+        </div>
+
+        <!-- Main Content Area: Flowchart Visual + Bottleneck Breakdown -->
+        <div class="grid-row main-row">
+          <!-- Left: Power Automate Process Mining Visual Clone -->
+          <div class="pbi-card" style="display: flex; flex-direction: column;">
+            <div class="pbi-card-header" style="display: flex; justify-content: space-between;">
+              <span>Power Automate Process Mining Visual (Directly Follows Graph)</span>
+              <span style="color: var(--pbi-red);">● 1,217 Loopbacks Identified</span>
+            </div>
+            <div class="flow-container">
+              <svg viewBox="0 0 760 360" style="width: 100%; height: 100%;">
+                <defs>
+                  <marker id="pb-arr" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#0078d4" />
+                  </marker>
+                  <marker id="pb-red" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#d13438" />
+                  </marker>
+                </defs>
+
+                <!-- Forward Flows -->
+                <path d="M 90 180 L 160 180" stroke="#0078d4" stroke-width="2.5" fill="none" marker-end="url(#pb-arr)" />
+                <path d="M 210 160 L 280 100" stroke="#0078d4" stroke-width="2.5" fill="none" marker-end="url(#pb-arr)" />
+                <path d="M 210 200 L 280 260" stroke="#0078d4" stroke-width="2.5" fill="none" marker-end="url(#pb-arr)" />
+                <path d="M 230 180 L 410 180" stroke="#0078d4" stroke-width="1.5" fill="none" marker-end="url(#pb-arr)" />
+
+                <!-- The 40.2% LOOPBACK ARC -->
+                <path d="M 310 80 Q 250 20 200 150" stroke="#d13438" stroke-width="3" stroke-dasharray="5" fill="none" marker-end="url(#pb-red)" />
+                <rect x="215" y="30" width="130" height="20" rx="3" fill="#fdf3f4" stroke="#d13438" />
+                <text x="280" y="44" fill="#d13438" font-size="9" font-weight="bold" text-anchor="middle">⚠️ Loopback: 1,217 (40.2%)</text>
+
+                <path d="M 330 100 L 330 240" stroke="#0078d4" stroke-width="2" fill="none" marker-end="url(#pb-arr)" />
+                <path d="M 350 90 L 410 160" stroke="#0078d4" stroke-width="1.5" fill="none" marker-end="url(#pb-arr)" />
+                <path d="M 350 270 L 410 200" stroke="#0078d4" stroke-width="2.5" fill="none" marker-end="url(#pb-arr)" />
+                <path d="M 490 180 L 560 180" stroke="#0078d4" stroke-width="3" fill="none" marker-end="url(#pb-arr)" />
+                <path d="M 640 180 L 690 180" stroke="#0078d4" stroke-width="3" fill="none" marker-end="url(#pb-arr)" />
+
+                <!-- Activities -->
+                <g transform="translate(10, 160)">
+                  <rect width="80" height="40" rx="4" fill="#f3f2f1" stroke="#0078d4" stroke-width="2" />
+                  <text x="40" y="24" fill="#201f1e" font-size="10" font-weight="bold" text-anchor="middle">Registration</text>
+                </g>
+                <g transform="translate(160, 160)">
+                  <rect width="70" height="40" rx="4" fill="#fdf3f4" stroke="#d13438" stroke-width="2" />
+                  <text x="35" y="24" fill="#d13438" font-size="11" font-weight="bold" text-anchor="middle">Triage</text>
+                </g>
+                <g transform="translate(280, 80)">
+                  <rect width="70" height="40" rx="4" fill="#fdf3f4" stroke="#d13438" stroke-width="2" />
+                  <text x="35" y="24" fill="#d13438" font-size="11" font-weight="bold" text-anchor="middle">X-Ray</text>
+                </g>
+                <g transform="translate(280, 240)">
+                  <rect width="70" height="40" rx="4" fill="#f3f2f1" stroke="#0078d4" stroke-width="2" />
+                  <text x="35" y="24" fill="#201f1e" font-size="10" font-weight="bold" text-anchor="middle">Lab Tests</text>
+                </g>
+                <g transform="translate(410, 160)">
+                  <rect width="80" height="40" rx="4" fill="#f3f2f1" stroke="#0078d4" stroke-width="2" />
+                  <text x="40" y="24" fill="#201f1e" font-size="10" font-weight="bold" text-anchor="middle">Doctor Consult</text>
+                </g>
+                <g transform="translate(560, 160)">
+                  <rect width="80" height="40" rx="4" fill="#f3f2f1" stroke="#0078d4" stroke-width="2" />
+                  <text x="40" y="24" fill="#201f1e" font-size="10" font-weight="bold" text-anchor="middle">Treatment</text>
+                </g>
+                <g transform="translate(690, 160)">
+                  <rect width="60" height="40" rx="4" fill="#e7f4ec" stroke="#107c41" stroke-width="2" />
+                  <text x="30" y="24" fill="#107c41" font-size="10" font-weight="bold" text-anchor="middle">Discharge</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Right: Bottleneck Bar Chart & Matrix -->
+          <div class="pbi-card">
+            <div class="pbi-card-header">Top Transition Delays (Minutes)</div>
+            <div style="height: 380px; overflow-y: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Transition</th>
+                    <th>Wait</th>
+                    <th>Hours Lost</th>
+                  </tr>
+                </thead>
+                <tbody id="pbi-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Power BI Right-Side Panes (Fields & Visuals) -->
+    <div class="pbi-sidebar">
+      <div class="pane-header">
+        <span>Data / Fields Pane</span>
+        <span>▼</span>
+      </div>
+      <div class="pane-body">
+        
+        <div class="table-tree">
+          <div class="table-tree-title">🗂️ dim_patient</div>
+          <div class="table-field"><span class="field-icon">#</span> case_id</div>
+          <div class="table-field"><span class="field-icon">∑</span> fitness_score</div>
+          <div class="table-field"><span class="field-icon">✓</span> is_compliant</div>
+          <div class="table-field"><span class="field-icon">⚠️</span> xray_triage_loopback</div>
+          <div class="table-field"><span class="field-icon">A</span> severity</div>
+          <div class="table-field"><span class="field-icon">A</span> age_group</div>
+        </div>
+
+        <div class="table-tree">
+          <div class="table-tree-title">🗂️ fact_event_log</div>
+          <div class="table-field"><span class="field-icon">#</span> case_id</div>
+          <div class="table-field"><span class="field-icon">A</span> activity</div>
+          <div class="table-field"><span class="field-icon">📅</span> timestamp</div>
+          <div class="table-field"><span class="field-icon">123</span> event_seq</div>
+          <div class="table-field"><span class="field-icon">A</span> resource</div>
+          <div class="table-field"><span class="field-icon">∑</span> duration_min</div>
+        </div>
+
+        <div class="table-tree">
+          <div class="table-tree-title">🗂️ fact_transitions</div>
+          <div class="table-field"><span class="field-icon">A</span> source</div>
+          <div class="table-field"><span class="field-icon">A</span> target</div>
+          <div class="table-field"><span class="field-icon">∑</span> mean_wait_min</div>
+          <div class="table-field"><span class="field-icon">∑</span> total_hours_lost</div>
+        </div>
+
+      </div>
+
+      <div class="pane-header" style="border-top: 1px solid var(--pbi-border);">
+        <span>Visualizations</span>
+        <span>🎨</span>
+      </div>
+      <div class="pane-body" style="flex: 0.6; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; align-content: start;">
+        <div style="background:#f3f2f1; padding:6px; text-align:center; border:1px solid #e1dfdd; border-radius:3px;">📊</div>
+        <div style="background:#f3f2f1; padding:6px; text-align:center; border:1px solid #e1dfdd; border-radius:3px;">📈</div>
+        <div style="background:#f3f2f1; padding:6px; text-align:center; border:1px solid #e1dfdd; border-radius:3px;">🍩</div>
+        <div style="background:#f3f2f1; padding:6px; text-align:center; border:1px solid #e1dfdd; border-radius:3px;">🗺️</div>
+        <div style="background:#fdf3f4; padding:6px; text-align:center; border:1px solid #d13438; border-radius:3px;" title="Custom Process Mining Visual">🔄</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Page Navigation Bar -->
+  <div class="pbi-page-bar">
+    <div class="page-tab active">Page 1: Executive Overview</div>
+    <div class="page-tab" onclick="alert('Viewing Process Flow View')">Page 2: Process Mining Flow</div>
+    <div class="page-tab" onclick="alert('Viewing Bottleneck Matrix')">Page 3: Bottleneck Matrix</div>
+    <span style="color: #605e5c; margin-left: 10px; font-size: 14px; cursor: pointer;">+</span>
+  </div>
+
+  <script>
+    const bData = [{"source":"Lab Tests","target":"Doctor Consultation","transition_count":3456,"mean_wait_min":68.48,"median_wait_min":67.62,"p90_wait_min":97.79,"min_wait_min":4.6,"max_wait_min":148.45,"total_hours_lost":3944.4},{"source":"X-Ray","target":"Doctor Consultation","transition_count":578,"mean_wait_min":64.08,"median_wait_min":63.72,"p90_wait_min":90.8,"min_wait_min":7.82,"max_wait_min":118.13,"total_hours_lost":617.3},{"source":"Triage","target":"Doctor Consultation","transition_count":966,"mean_wait_min":54.5,"median_wait_min":53.8,"p90_wait_min":80.57,"min_wait_min":8.78,"max_wait_min":125.25,"total_hours_lost":877.4},{"source":"X-Ray","target":"Lab Tests","transition_count":1230,"mean_wait_min":51.17,"median_wait_min":50.93,"p90_wait_min":69.35,"min_wait_min":15.27,"max_wait_min":99.08,"total_hours_lost":1049.0},{"source":"Doctor Consultation","target":"Doctor Review","transition_count":283,"mean_wait_min":44.81,"median_wait_min":44.55,"p90_wait_min":61.35,"min_wait_min":8.33,"max_wait_min":84.23,"total_hours_lost":211.4},{"source":"Triage","target":"Lab Tests","transition_count":2226,"mean_wait_min":43.64,"median_wait_min":43.28,"p90_wait_min":60.89,"min_wait_min":5.63,"max_wait_min":89.63,"total_hours_lost":1619.0},{"source":"Treatment","target":"Discharge","transition_count":5000,"mean_wait_min":42.7,"median_wait_min":42.58,"p90_wait_min":59.07,"min_wait_min":2.5,"max_wait_min":87.38,"total_hours_lost":3558.3},{"source":"Doctor Consultation","target":"Treatment","transition_count":4717,"mean_wait_min":35.52,"median_wait_min":35.23,"p90_wait_min":48.31,"min_wait_min":4.67,"max_wait_min":71.78,"total_hours_lost":2792.5},{"source":"Doctor Review","target":"Treatment","transition_count":283,"mean_wait_min":31.4,"median_wait_min":31.47,"p90_wait_min":43.03,"min_wait_min":9.22,"max_wait_min":52.23,"total_hours_lost":148.1},{"source":"X-Ray","target":"Triage","transition_count":1217,"mean_wait_min":29.29,"median_wait_min":28.92,"p90_wait_min":39.44,"min_wait_min":7.85,"max_wait_min":55.13,"total_hours_lost":594.1},{"source":"Triage","target":"X-Ray","transition_count":3025,"mean_wait_min":28.6,"median_wait_min":28.3,"p90_wait_min":40.21,"min_wait_min":3.48,"max_wait_min":61.57,"total_hours_lost":1441.9},{"source":"Registration","target":"Triage","transition_count":5000,"mean_wait_min":17.12,"median_wait_min":17.0,"p90_wait_min":24.52,"min_wait_min":2.5,"max_wait_min":44.02,"total_hours_lost":1426.7}];
+    const tbody = document.getElementById('pbi-table-body');
+    bData.forEach(row => {
+      const tr = document.createElement('tr');
+      const isLoop = row.source === 'X-Ray' && row.target === 'Triage';
+      tr.innerHTML = `
+        <td style="${isLoop ? 'color: #d13438; font-weight: bold;' : ''}">
+          ${row.source} → ${row.target} ${isLoop ? '⚠️' : ''}
+        </td>
+        <td><strong>${row.mean_wait_min}m</strong></td>
+        <td>${row.total_hours_lost}h</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  </script>
+</body>
+</html>
