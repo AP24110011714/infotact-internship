@@ -1,0 +1,9 @@
+activity_id,activity_name
+1,Registration
+2,Triage
+3,X-Ray
+4,Lab Tests
+5,Doctor Consultation
+6,Treatment
+7,Discharge
+8,Doctor Review

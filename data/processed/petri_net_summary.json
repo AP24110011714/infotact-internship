@@ -1,0 +1,19 @@
+{
+  "model_type": "Inductive Miner Petri Net",
+  "places_count": 10,
+  "transitions_count": 13,
+  "visible_transitions_count": 8,
+  "silent_transitions_count": 5,
+  "arcs_count": 26,
+  "pnml_file": "careflow_petri_net.pnml",
+  "visible_activities": [
+    "Discharge",
+    "Doctor Consultation",
+    "Doctor Review",
+    "Lab Tests",
+    "Registration",
+    "Treatment",
+    "Triage",
+    "X-Ray"
+  ]
+}

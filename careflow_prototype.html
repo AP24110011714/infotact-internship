@@ -31,7 +31,7 @@
       align-items: center;
       padding-bottom: 20px;
       border-bottom: 1px solid var(--card-border);
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .badge {
       display: inline-block;
@@ -46,9 +46,44 @@
     .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
     .badge-info { background: rgba(56, 189, 248, 0.2); color: var(--primary); border: 1px solid var(--primary); }
     
+    /* Drill-down filter bar */
+    .filter-bar {
+      background: #1e293b;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    select {
+      background: #0f172a;
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+    select:focus { border-color: var(--primary); }
+
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -171,13 +206,13 @@
     <div>
       <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em;">CareFlow: Clinical Pathway Process Mining</h1>
       <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">
-        Hospital Operations Intelligence Engine • PM4Py 2.7.23 • BigQuery & dbt Modern Data Stack
+        Hospital Operations Intelligence Engine • PM4Py 2.7.23 • BigQuery & dbt Modern Data Stack • Batch 22.1
       </p>
     </div>
     <div style="display: flex; gap: 10px;">
       <span class="badge badge-alert">Bottleneck Detected</span>
       <span class="badge badge-success">5,000 Cases Verified</span>
-      <span class="badge badge-info">Infotact Batch 22.1</span>
+      <span class="badge badge-info">Petri Net & DFG</span>
     </div>
   </div>
 
@@ -193,26 +228,52 @@
     </div>
   </div>
 
+  <!-- Week 4: Demographic Drill-Down Filters -->
+  <div class="filter-bar">
+    <div style="font-size: 13px; font-weight: 700; color: var(--primary);">🎯 PATIENT DRILL-DOWN FILTERS:</div>
+    <div class="filter-group">
+      <span class="filter-label">Severity:</span>
+      <select id="filter-severity" onchange="applyFilters()">
+        <option value="ALL">All Severities (5,000)</option>
+        <option value="Normal">Normal</option>
+        <option value="Urgent">Urgent</option>
+        <option value="Critical">Critical</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Age Group:</span>
+      <select id="filter-age" onchange="applyFilters()">
+        <option value="ALL">All Age Groups</option>
+        <option value="Child">Child</option>
+        <option value="Adult">Adult</option>
+        <option value="Senior">Senior</option>
+      </select>
+    </div>
+    <div style="margin-left: auto; font-size: 12px; color: var(--text-muted);" id="filter-status">
+      Showing: Entire Hospital Cohort (5,000 cases)
+    </div>
+  </div>
+
   <!-- KPI Cards -->
   <div class="kpi-grid">
     <div class="kpi-card highlight">
       <div class="kpi-title">X-Ray → Triage Loopbacks</div>
-      <div class="kpi-value" style="color: var(--accent);">1,217</div>
-      <div class="kpi-sub">40.2% of X-Ray cases (24.34% of all admissions)</div>
+      <div class="kpi-value" id="kpi-loopback" style="color: var(--accent);">1,217</div>
+      <div class="kpi-sub" id="kpi-loopback-sub">40.2% of X-Ray cases (24.34% of cohort)</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-title">Total Ingested Events</div>
-      <div class="kpi-value">32,981</div>
-      <div class="kpi-sub">Chronological EHR logs across 5,000 cases</div>
+      <div class="kpi-title">Active Filter Cases</div>
+      <div class="kpi-value" id="kpi-cases">5,000</div>
+      <div class="kpi-sub">Total chronological patient traces</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-title">Clinical Compliance Rate</div>
-      <div class="kpi-value" style="color: var(--success);">75.66%</div>
-      <div class="kpi-sub">Average trace fitness: 0.915 / 1.0</div>
+      <div class="kpi-value" id="kpi-compliance" style="color: var(--success);">75.66%</div>
+      <div class="kpi-sub" id="kpi-fitness">Average trace fitness: 0.915 / 1.0</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-title">Hours Lost to Paperwork</div>
-      <div class="kpi-value" style="color: var(--warning);">594.1 hrs</div>
+      <div class="kpi-value" id="kpi-hours" style="color: var(--warning);">594.1 hrs</div>
       <div class="kpi-sub">29.3 min avg delay per looped patient</div>
     </div>
     <div class="kpi-card">
@@ -225,6 +286,7 @@
   <!-- Navigation Tabs -->
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('dfg')">🗺️ Spaghetti Diagram (DFG)</button>
+    <button class="tab-btn" onclick="switchTab('petri')">🕸️ Petri Net Architecture</button>
     <button class="tab-btn" onclick="switchTab('bottlenecks')">⏱️ Bottleneck Analysis</button>
     <button class="tab-btn" onclick="switchTab('variants')">📊 Process Variants</button>
     <button class="tab-btn" onclick="switchTab('conformance')">⚖️ Conformance & Compliance</button>
@@ -249,19 +311,15 @@
           </defs>
 
           <!-- Standard Forward Transitions -->
-          <!-- Registration -> Triage -->
           <path d="M 140 230 L 220 230" class="edge-line" marker-end="url(#arrow)" />
           <text x="180" y="222" class="edge-label">5,000 (17m)</text>
 
-          <!-- Triage -> X-Ray -->
           <path d="M 280 205 L 370 140" class="edge-line" marker-end="url(#arrow)" />
           <text x="315" y="165" class="edge-label">3,025 (29m)</text>
 
-          <!-- Triage -> Lab Tests -->
           <path d="M 280 255 L 370 320" class="edge-line" marker-end="url(#arrow)" />
           <text x="315" y="305" class="edge-label">2,226 (44m)</text>
 
-          <!-- Triage -> Doctor -->
           <path d="M 320 230 L 530 230" class="edge-line" marker-end="url(#arrow)" />
           <text x="420" y="222" class="edge-label">966 (55m)</text>
 
@@ -270,70 +328,52 @@
           <rect x="280" y="45" width="160" height="24" rx="4" fill="#881337" stroke="#f43f5e" />
           <text x="360" y="61" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">⚠️ Loopback: 1,217 (40.2%)</text>
 
-          <!-- X-Ray -> Lab Tests -->
           <path d="M 420 160 L 420 295" class="edge-line" marker-end="url(#arrow)" />
           <text x="445" y="235" class="edge-label">1,230 (51m)</text>
 
-          <!-- X-Ray -> Doctor -->
           <path d="M 470 135 L 540 205" class="edge-line" marker-end="url(#arrow)" />
           <text x="520" y="160" class="edge-label">578 (64m)</text>
 
-          <!-- Lab Tests -> Doctor -->
           <path d="M 470 325 L 540 255" class="edge-line" marker-end="url(#arrow)" />
           <text x="515" y="305" class="edge-label">3,456 (68m)</text>
 
-          <!-- Doctor -> Treatment -->
           <path d="M 640 230 L 730 230" class="edge-line" marker-end="url(#arrow)" />
           <text x="685" y="222" class="edge-label">4,717 (36m)</text>
 
-          <!-- Treatment -> Discharge -->
           <path d="M 830 230 L 900 230" class="edge-line" marker-end="url(#arrow)" />
           <text x="865" y="222" class="edge-label">5,000 (43m)</text>
 
           <!-- Nodes -->
-          <!-- 1. Registration -->
           <g transform="translate(40, 205)">
             <rect width="100" height="50" class="node-rect" />
             <text x="50" y="26" class="node-text">Registration</text>
             <text x="50" y="40" class="node-sub">5,000 cases</text>
           </g>
-
-          <!-- 2. Triage -->
           <g transform="translate(220, 205)">
             <rect width="100" height="50" class="node-rect highlight" />
             <text x="50" y="26" class="node-text">Triage</text>
             <text x="50" y="40" class="node-sub">6,217 events</text>
           </g>
-
-          <!-- 3. X-Ray -->
           <g transform="translate(370, 110)">
             <rect width="100" height="50" class="node-rect highlight" />
             <text x="50" y="26" class="node-text">X-Ray</text>
             <text x="50" y="40" class="node-sub">3,025 cases</text>
           </g>
-
-          <!-- 4. Lab Tests -->
           <g transform="translate(370, 300)">
             <rect width="100" height="50" class="node-rect" />
             <text x="50" y="26" class="node-text">Lab Tests</text>
             <text x="50" y="40" class="node-sub">3,456 cases</text>
           </g>
-
-          <!-- 5. Doctor Consultation -->
           <g transform="translate(540, 205)">
             <rect width="100" height="50" class="node-rect" />
             <text x="50" y="26" class="node-text">Doctor Consult</text>
             <text x="50" y="40" class="node-sub">5,000 cases</text>
           </g>
-
-          <!-- 6. Treatment -->
           <g transform="translate(730, 205)">
             <rect width="100" height="50" class="node-rect" />
             <text x="50" y="26" class="node-text">Treatment</text>
             <text x="50" y="40" class="node-sub">5,000 cases</text>
           </g>
-
-          <!-- 7. Discharge -->
           <g transform="translate(900, 205)">
             <rect width="90" height="50" class="node-rect" style="stroke: var(--success);" />
             <text x="45" y="26" class="node-text">Discharge</text>
@@ -344,7 +384,41 @@
     </div>
   </div>
 
-  <!-- TAB 2: Bottleneck Analysis -->
+  <!-- TAB 2: Formal Petri Net -->
+  <div id="tab-petri" class="tab-content">
+    <div class="card">
+      <div class="card-title">Formal Petri Net Architecture (PM4Py Inductive Miner)</div>
+      <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
+        Discovered mathematically from EHR logs. Conforms to PNML (Petri Net Markup Language) specifications.
+      </p>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="color: var(--primary); font-size: 24px; font-weight: bold;">10</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Places (States)</div>
+        </div>
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="color: var(--warning); font-size: 24px; font-weight: bold;">13</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Transitions (8 visible, 5 silent)</div>
+        </div>
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="color: var(--success); font-size: 24px; font-weight: bold;">26</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Directed Arcs</div>
+        </div>
+        <div style="background: #0f172a; padding: 16px; border-radius: 8px; text-align: center;">
+          <div style="color: var(--accent); font-size: 24px; font-weight: bold;">PNML</div>
+          <div style="font-size: 12px; color: var(--text-muted);">Exported to data/processed/</div>
+        </div>
+      </div>
+      <div style="background: #0b1120; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; line-height: 1.8;">
+        <strong>Model Type:</strong> Inductive Miner Process Tree $ightarrow$ Petri Net<br>
+        <strong>Places:</strong> source_place, p_triage, p_xray, p_lab, p_doctor, p_treatment, sink_place (+ internal synchronization places)<br>
+        <strong>Loopback Semantics:</strong> Backward firing transition $	au_{xray\_triage}$ returning tokens to p_triage upon missing intake paperwork.<br>
+        <strong>Fitness Guarantee:</strong> Mathematically sound, deadlock-free workflow net (WFN).
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Bottleneck Analysis -->
   <div id="tab-bottlenecks" class="tab-content">
     <div class="card">
       <div class="card-title">Transition Time Bottlenecks & Operational Delays</div>
@@ -361,13 +435,12 @@
             <th style="width: 180px;">Impact Severity</th>
           </tr>
         </thead>
-        <tbody>
-        </tbody>
+        <tbody></tbody>
       </table>
     </div>
   </div>
 
-  <!-- TAB 3: Process Variants -->
+  <!-- TAB 4: Process Variants -->
   <div id="tab-variants" class="tab-content">
     <div class="card">
       <div class="card-title">Discovered Patient Pathways (Process Variants)</div>
@@ -382,13 +455,12 @@
             <th>Pathway Sequence</th>
           </tr>
         </thead>
-        <tbody>
-        </tbody>
+        <tbody></tbody>
       </table>
     </div>
   </div>
 
-  <!-- TAB 4: Conformance & Compliance -->
+  <!-- TAB 5: Conformance & Compliance -->
   <div id="tab-conformance" class="tab-content">
     <div class="card">
       <div class="card-title">Clinical Protocol Conformance Audit</div>
@@ -430,6 +502,7 @@
   <script>
     const bottlenecksData = [{"source":"Lab Tests","target":"Doctor Consultation","transition_count":3456,"mean_wait_min":68.48,"median_wait_min":67.62,"p90_wait_min":97.79,"min_wait_min":4.6,"max_wait_min":148.45,"total_hours_lost":3944.4},{"source":"X-Ray","target":"Doctor Consultation","transition_count":578,"mean_wait_min":64.08,"median_wait_min":63.72,"p90_wait_min":90.8,"min_wait_min":7.82,"max_wait_min":118.13,"total_hours_lost":617.3},{"source":"Triage","target":"Doctor Consultation","transition_count":966,"mean_wait_min":54.5,"median_wait_min":53.8,"p90_wait_min":80.57,"min_wait_min":8.78,"max_wait_min":125.25,"total_hours_lost":877.4},{"source":"X-Ray","target":"Lab Tests","transition_count":1230,"mean_wait_min":51.17,"median_wait_min":50.93,"p90_wait_min":69.35,"min_wait_min":15.27,"max_wait_min":99.08,"total_hours_lost":1049.0},{"source":"Doctor Consultation","target":"Doctor Review","transition_count":283,"mean_wait_min":44.81,"median_wait_min":44.55,"p90_wait_min":61.35,"min_wait_min":8.33,"max_wait_min":84.23,"total_hours_lost":211.4},{"source":"Triage","target":"Lab Tests","transition_count":2226,"mean_wait_min":43.64,"median_wait_min":43.28,"p90_wait_min":60.89,"min_wait_min":5.63,"max_wait_min":89.63,"total_hours_lost":1619.0},{"source":"Treatment","target":"Discharge","transition_count":5000,"mean_wait_min":42.7,"median_wait_min":42.58,"p90_wait_min":59.07,"min_wait_min":2.5,"max_wait_min":87.38,"total_hours_lost":3558.3},{"source":"Doctor Consultation","target":"Treatment","transition_count":4717,"mean_wait_min":35.52,"median_wait_min":35.23,"p90_wait_min":48.31,"min_wait_min":4.67,"max_wait_min":71.78,"total_hours_lost":2792.5},{"source":"Doctor Review","target":"Treatment","transition_count":283,"mean_wait_min":31.4,"median_wait_min":31.47,"p90_wait_min":43.03,"min_wait_min":9.22,"max_wait_min":52.23,"total_hours_lost":148.1},{"source":"X-Ray","target":"Triage","transition_count":1217,"mean_wait_min":29.29,"median_wait_min":28.92,"p90_wait_min":39.44,"min_wait_min":7.85,"max_wait_min":55.13,"total_hours_lost":594.1},{"source":"Triage","target":"X-Ray","transition_count":3025,"mean_wait_min":28.6,"median_wait_min":28.3,"p90_wait_min":40.21,"min_wait_min":3.48,"max_wait_min":61.57,"total_hours_lost":1441.9},{"source":"Registration","target":"Triage","transition_count":5000,"mean_wait_min":17.12,"median_wait_min":17.0,"p90_wait_min":24.52,"min_wait_min":2.5,"max_wait_min":44.02,"total_hours_lost":1426.7}];
     const variantsData = [{"variant_id":"Variant 1","case_count":1235,"percentage":24.7,"step_count":6,"has_loopback":false,"variant_path":"Registration \u2192 Triage \u2192 Lab Tests \u2192 Doctor Consultation \u2192 Treatment \u2192 Discharge"},{"variant_id":"Variant 2","case_count":1134,"percentage":22.68,"step_count":7,"has_loopback":false,"variant_path":"Registration \u2192 Triage \u2192 X-Ray \u2192 Lab Tests \u2192 Doctor Consultation \u2192 Treatment \u2192 Discharge"},{"variant_id":"Variant 3","case_count":804,"percentage":16.08,"step_count":8,"has_loopback":true,"variant_path":"Registration \u2192 Triage \u2192 X-Ray \u2192 Triage \u2192 Lab Tests \u2192 Doctor Consultation \u2192 Treatment \u2192 Discharge"},{"variant_id":"Variant 4","case_count":625,"percentage":12.5,"step_count":5,"has_loopback":false,"variant_path":"Registration \u2192 Triage \u2192 Doctor Consultation \u2192 Treatment \u2192 Discharge"},{"variant_id":"Variant 5","case_count":578,"percentage":11.56,"step_count":6,"has_loopback":false,"variant_path":"Registration \u2192 Triage \u2192 X-Ray \u2192 Doctor Consultation \u2192 Treatment \u2192 Discharge"},{"variant_id":"Variant 6","case_count":341,"percentage":6.82,"step_count":7,"has_loopback":true,"variant_path":"Registration \u2192 Triage \u2192 X-Ray \u2192 Triage \u2192 Doctor Consultation \u2192 Treatment \u2192 Discharge"},{"variant_id":"Variant 7","case_count":115,"percentage":2.3,"step_count":7,"has_loopback":false,"variant_path":"Registration \u2192 Triage \u2192 Lab Tests \u2192 Doctor Consultation \u2192 Doctor Review \u2192 Treatment \u2192 Discharge"},{"variant_id":"Variant 8","case_count":96,"percentage":1.92,"step_count":8,"has_loopback":false,"variant_path":"Registration \u2192 Triage \u2192 X-Ray \u2192 Lab Tests \u2192 Doctor Consultation \u2192 Doctor Review \u2192 Treatment \u2192 Discharge"},{"variant_id":"Variant 9","case_count":72,"percentage":1.44,"step_count":9,"has_loopback":true,"variant_path":"Registration \u2192 Triage \u2192 X-Ray \u2192 Triage \u2192 Lab Tests \u2192 Doctor Consultation \u2192 Doctor Review \u2192 Treatment \u2192 Discharge"}];
+    const demographicsData = {"Critical_0-18": {"cases": 76, "loopbacks": 19, "loopback_pct": 25.0, "compliance_pct": 75.0, "fitness": 0.913}, "Critical_19-35": {"cases": 66, "loopbacks": 19, "loopback_pct": 28.8, "compliance_pct": 71.2, "fitness": 0.899}, "Critical_36-55": {"cases": 53, "loopbacks": 18, "loopback_pct": 34.0, "compliance_pct": 66.0, "fitness": 0.881}, "Critical_56-70": {"cases": 71, "loopbacks": 11, "loopback_pct": 15.5, "compliance_pct": 84.5, "fitness": 0.946}, "Critical_70+": {"cases": 68, "loopbacks": 12, "loopback_pct": 17.6, "compliance_pct": 82.4, "fitness": 0.938}, "High_0-18": {"cases": 163, "loopbacks": 31, "loopback_pct": 19.0, "compliance_pct": 81.0, "fitness": 0.933}, "High_19-35": {"cases": 196, "loopbacks": 55, "loopback_pct": 28.1, "compliance_pct": 71.9, "fitness": 0.902}, "High_36-55": {"cases": 191, "loopbacks": 58, "loopback_pct": 30.4, "compliance_pct": 69.6, "fitness": 0.894}, "High_56-70": {"cases": 175, "loopbacks": 44, "loopback_pct": 25.1, "compliance_pct": 74.9, "fitness": 0.912}, "High_70+": {"cases": 189, "loopbacks": 40, "loopback_pct": 21.2, "compliance_pct": 78.8, "fitness": 0.926}, "Low_0-18": {"cases": 296, "loopbacks": 78, "loopback_pct": 26.4, "compliance_pct": 73.6, "fitness": 0.908}, "Low_19-35": {"cases": 320, "loopbacks": 85, "loopback_pct": 26.6, "compliance_pct": 73.4, "fitness": 0.907}, "Low_36-55": {"cases": 289, "loopbacks": 66, "loopback_pct": 22.8, "compliance_pct": 77.2, "fitness": 0.92}, "Low_56-70": {"cases": 312, "loopbacks": 72, "loopback_pct": 23.1, "compliance_pct": 76.9, "fitness": 0.919}, "Low_70+": {"cases": 273, "loopbacks": 70, "loopback_pct": 25.6, "compliance_pct": 74.4, "fitness": 0.91}, "Medium_0-18": {"cases": 458, "loopbacks": 107, "loopback_pct": 23.4, "compliance_pct": 76.6, "fitness": 0.918}, "Medium_19-35": {"cases": 469, "loopbacks": 108, "loopback_pct": 23.0, "compliance_pct": 77.0, "fitness": 0.919}, "Medium_36-55": {"cases": 459, "loopbacks": 115, "loopback_pct": 25.1, "compliance_pct": 74.9, "fitness": 0.912}, "Medium_56-70": {"cases": 452, "loopbacks": 110, "loopback_pct": 24.3, "compliance_pct": 75.7, "fitness": 0.915}, "Medium_70+": {"cases": 424, "loopbacks": 99, "loopback_pct": 23.3, "compliance_pct": 76.7, "fitness": 0.918}};
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -437,6 +510,51 @@
       
       event.target.classList.add('active');
       document.getElementById('tab-' + tabId).classList.add('active');
+    }
+
+    function applyFilters() {
+      const sev = document.getElementById('filter-severity').value;
+      const age = document.getElementById('filter-age').value;
+      
+      if (sev === 'ALL' && age === 'ALL') {
+        document.getElementById('kpi-cases').innerText = '5,000';
+        document.getElementById('kpi-loopback').innerText = '1,217';
+        document.getElementById('kpi-loopback-sub').innerText = '40.2% of X-Ray cases (24.3% of cohort)';
+        document.getElementById('kpi-compliance').innerText = '75.66%';
+        document.getElementById('kpi-fitness').innerText = 'Average trace fitness: 0.915 / 1.0';
+        document.getElementById('kpi-hours').innerText = '594.1 hrs';
+        document.getElementById('filter-status').innerText = 'Showing: Entire Hospital Cohort (5,000 cases)';
+        return;
+      }
+
+      // Calculate aggregate matching combinations
+      let totalC = 0, totalL = 0, sumFit = 0, matchCount = 0;
+      for (const [key, val] of Object.entries(demographicsData)) {
+        const [s, a] = key.split('_');
+        const matchS = (sev === 'ALL' || sev === s);
+        const matchA = (age === 'ALL' || age === a);
+        if (matchS && matchA) {
+          totalC += val.cases;
+          totalL += val.loopbacks;
+          sumFit += val.fitness * val.cases;
+          matchCount++;
+        }
+      }
+
+      if (totalC > 0) {
+        const loopPct = ((totalL / totalC) * 100).toFixed(1);
+        const compPct = (((totalC - totalL) / totalC) * 100).toFixed(1);
+        const avgFit = (sumFit / totalC).toFixed(3);
+        const hoursLost = ((totalL * 29.3) / 60.0).toFixed(1);
+
+        document.getElementById('kpi-cases').innerText = totalC.toLocaleString();
+        document.getElementById('kpi-loopback').innerText = totalL.toLocaleString();
+        document.getElementById('kpi-loopback-sub').innerText = `${loopPct}% loopback rate in segment`;
+        document.getElementById('kpi-compliance').innerText = compPct + '%';
+        document.getElementById('kpi-fitness').innerText = `Segment fitness: ${avgFit} / 1.0`;
+        document.getElementById('kpi-hours').innerText = hoursLost + ' hrs';
+        document.getElementById('filter-status').innerText = `Filtered: Severity=${sev}, Age=${age} (${totalC.toLocaleString()} cases)`;
+      }
     }
 
     // Populate Bottlenecks

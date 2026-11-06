@@ -46,6 +46,10 @@ def main():
     # 4. Week 2: PM4Py Process Discovery (As-Is DFG)
     run_step(4, "PM4Py Process Discovery (Directly Follows Graph)", 
              [python, str(root / "mining" / "discover.py")])
+
+    # 4b. Week 2: PM4Py Petri Net Discovery (Inductive Miner)
+    run_step("4b", "PM4Py Formal Petri Net Discovery (PNML Generation)", 
+             [python, str(root / "mining" / "petri_net.py")])
              
     # 5. Week 3: Transition & Bottleneck Calculation
     run_step(5, "Bottleneck & Transition Time Analytics", 
