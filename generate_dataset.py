@@ -229,3 +229,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     generate_dataset(n_rows=args.rows, seed=args.seed, output_path=args.output)
+
