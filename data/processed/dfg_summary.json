@@ -1,0 +1,12 @@
+{
+  "total_cases": 5000,
+  "total_events": 32981,
+  "unique_activities": 8,
+  "unique_transitions": 12,
+  "start_activities": {
+    "Registration": 5000
+  },
+  "end_activities": {
+    "Discharge": 5000
+  }
+}

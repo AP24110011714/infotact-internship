@@ -1,0 +1,9 @@
+activity,count,is_start,is_end
+Triage,6217,0,0
+Registration,5000,5000,0
+Treatment,5000,0,0
+Doctor Consultation,5000,0,0
+Discharge,5000,0,5000
+Lab Tests,3456,0,0
+X-Ray,3025,0,0
+Doctor Review,283,0,0

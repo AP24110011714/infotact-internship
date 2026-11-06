@@ -1,0 +1,10 @@
+{
+  "total_cases": 5000,
+  "compliant_cases": 3783,
+  "compliance_rate_pct": 75.66,
+  "avg_fitness_score": 0.915,
+  "loopback_cases": 1217,
+  "loopback_rate_pct": 24.34,
+  "double_consultation_cases": 0,
+  "double_consultation_pct": 0.0
+}

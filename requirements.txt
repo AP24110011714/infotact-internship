@@ -2,3 +2,5 @@ pandas
 openpyxl
 streamlit
 pytest
+pm4py>=2.7.0
+numpy

@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Databases & local sqlite
+*.db
+*.sqlite
+*.sqlite3
+
 # Environments & secrets
 .env
 *.env
@@ -19,4 +24,3 @@ ENV/
 .pytest_cache/
 .coverage
 htmlcov/
-

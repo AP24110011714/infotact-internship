@@ -1,0 +1,13 @@
+source,target,count,is_loopback
+Treatment,Discharge,5000,False
+Registration,Triage,5000,False
+Doctor Consultation,Treatment,4717,False
+Lab Tests,Doctor Consultation,3456,False
+Triage,X-Ray,3025,False
+Triage,Lab Tests,2226,False
+X-Ray,Lab Tests,1230,False
+X-Ray,Triage,1217,True
+Triage,Doctor Consultation,966,False
+X-Ray,Doctor Consultation,578,False
+Doctor Review,Treatment,283,False
+Doctor Consultation,Doctor Review,283,False

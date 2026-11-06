@@ -1,0 +1,13 @@
+source,target,transition_count,mean_wait_min,median_wait_min,p90_wait_min,min_wait_min,max_wait_min,total_hours_lost
+Lab Tests,Doctor Consultation,3456,68.48,67.62,97.79,4.6,148.45,3944.4
+X-Ray,Doctor Consultation,578,64.08,63.72,90.8,7.82,118.13,617.3
+Triage,Doctor Consultation,966,54.5,53.8,80.57,8.78,125.25,877.4
+X-Ray,Lab Tests,1230,51.17,50.93,69.35,15.27,99.08,1049.0
+Doctor Consultation,Doctor Review,283,44.81,44.55,61.35,8.33,84.23,211.4
+Triage,Lab Tests,2226,43.64,43.28,60.89,5.63,89.63,1619.0
+Treatment,Discharge,5000,42.7,42.58,59.07,2.5,87.38,3558.3
+Doctor Consultation,Treatment,4717,35.52,35.23,48.31,4.67,71.78,2792.5
+Doctor Review,Treatment,283,31.4,31.47,43.03,9.22,52.23,148.1
+X-Ray,Triage,1217,29.29,28.92,39.44,7.85,55.13,594.1
+Triage,X-Ray,3025,28.6,28.3,40.21,3.48,61.57,1441.9
+Registration,Triage,5000,17.12,17.0,24.52,2.5,44.02,1426.7

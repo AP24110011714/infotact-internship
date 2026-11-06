@@ -1,0 +1,10 @@
+variant_id,case_count,percentage,step_count,has_loopback,variant_path
+Variant 1,1235,24.7,6,False,Registration → Triage → Lab Tests → Doctor Consultation → Treatment → Discharge
+Variant 2,1134,22.68,7,False,Registration → Triage → X-Ray → Lab Tests → Doctor Consultation → Treatment → Discharge
+Variant 3,804,16.08,8,True,Registration → Triage → X-Ray → Triage → Lab Tests → Doctor Consultation → Treatment → Discharge
+Variant 4,625,12.5,5,False,Registration → Triage → Doctor Consultation → Treatment → Discharge
+Variant 5,578,11.56,6,False,Registration → Triage → X-Ray → Doctor Consultation → Treatment → Discharge
+Variant 6,341,6.82,7,True,Registration → Triage → X-Ray → Triage → Doctor Consultation → Treatment → Discharge
+Variant 7,115,2.3,7,False,Registration → Triage → Lab Tests → Doctor Consultation → Doctor Review → Treatment → Discharge
+Variant 8,96,1.92,8,False,Registration → Triage → X-Ray → Lab Tests → Doctor Consultation → Doctor Review → Treatment → Discharge
+Variant 9,72,1.44,9,True,Registration → Triage → X-Ray → Triage → Lab Tests → Doctor Consultation → Doctor Review → Treatment → Discharge
