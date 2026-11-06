@@ -1,37 +1,39 @@
 # CareFlow Clinical Data Findings
 
 ## Dataset overview
-- Unique patients: 250
-- Admission date range: 2023-01-02 to 2024-01-01
-- Sepsis-positive records: 0
-- Sepsis-negative records: 250
+- Unique patients: 5000
+- Admission date range: 2022-01-01 to 2025-10-31
+- Sepsis-positive records: 903
+- Sepsis-negative records: 4097
 - Records with unknown sepsis status: 0
-- Sepsis rate among records with a known status: 0.0%
+- Sepsis rate among records with a known status: 18.1%
 
 ## Clinical measurements
 
 | Measurement | Unit | Valid values | Missing values | Mean | Median |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Temperature | °C | 250 | 0 | 36.99 | 37.10 |
-| Systolic blood pressure | mmHg | 250 | 0 | 115.32 | 115.00 |
-| Diastolic blood pressure | mmHg | 250 | 0 | 74.19 | 74.00 |
-| Heart rate | bpm | 250 | 0 | 91.29 | 91.50 |
-| White blood cell count | 10^9/L | 246 | 4 | 7.54 | 7.40 |
-| Lactate | mmol/L | 244 | 6 | 1.96 | 1.95 |
+| Temperature | °C | 4931 | 69 | 37.29 | 37.10 |
+| Systolic blood pressure | mmHg | 4930 | 70 | 114.90 | 115.79 |
+| Diastolic blood pressure | mmHg | 4932 | 68 | 72.70 | 73.46 |
+| Heart rate | bpm | 4950 | 50 | 84.27 | 80.87 |
+| White blood cell count | 10^9/L | 4828 | 172 | 8.81 | 7.93 |
+| Lactate | mmol/L | 4840 | 160 | 1.67 | 1.29 |
 
 ## Patients by ward
 
 | Ward | Patients | Sepsis-positive |
 | --- | ---: | ---: |
-| ICU-A | 67 | 0 |
-| ICU-B | 67 | 0 |
-| Ward-X | 61 | 0 |
-| ER | 55 | 0 |
+| Ward-X | 1669 | 114 |
+| ER | 1109 | 139 |
+| ICU-A | 702 | 252 |
+| ICU-B | 583 | 181 |
+| Surgical-ICU | 491 | 127 |
+| HDU | 446 | 90 |
 
 ## Data quality
 - Rows removed for missing patient ID or admission date: 0
 - Duplicate patient records removed: 0
-- Out-of-range numeric measurements set to missing: 10
+- Out-of-range numeric measurements set to missing: 396
 
 ## Interpretation
 These are descriptive summaries of the supplied patient-level records. They do not establish causes, diagnose sepsis, or measure care pathways. The supplied workbook currently labels every record as sepsis-negative, so comparisons between positive and negative groups are not possible.

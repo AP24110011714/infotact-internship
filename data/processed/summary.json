@@ -1,10 +1,10 @@
 {
-  "total_patients": 250,
-  "total_records": 250,
-  "sepsis_positive": 0,
-  "sepsis_negative": 250,
+  "total_patients": 5000,
+  "total_records": 5000,
+  "sepsis_positive": 903,
+  "sepsis_negative": 4097,
   "sepsis_unknown": 0,
-  "sepsis_rate_percent": 0.0,
-  "earliest_admission": "2023-01-02",
-  "latest_admission": "2024-01-01"
+  "sepsis_rate_percent": 18.06,
+  "earliest_admission": "2022-01-01",
+  "latest_admission": "2025-10-31"
 }

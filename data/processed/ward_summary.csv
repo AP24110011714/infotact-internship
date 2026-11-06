@@ -1,5 +1,7 @@
 ward,patients,sepsis_positive,known_sepsis_status,sepsis_rate_percent
-ICU-A,67,0,67,0.0
-ICU-B,67,0,67,0.0
-Ward-X,61,0,61,0.0
-ER,55,0,55,0.0
+Ward-X,1669,114,1669,6.83
+ER,1109,139,1109,12.53
+ICU-A,702,252,702,35.9
+ICU-B,583,181,583,31.05
+Surgical-ICU,491,127,491,25.87
+HDU,446,90,446,20.18

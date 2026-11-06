@@ -1,7 +1,13 @@
 metric,label,unit,sepsis_status,patients,mean,median
-temperature_c,Temperature,°C,No,250,36.993199999999995,37.1
-bp_systolic,Systolic blood pressure,mmHg,No,250,115.324,115.0
-bp_diastolic,Diastolic blood pressure,mmHg,No,250,74.188,74.0
-heart_rate,Heart rate,bpm,No,250,91.288,91.5
-wbc_count,White blood cell count,10^9/L,No,246,7.54349593495935,7.4
-lactate_mmol_l,Lactate,mmol/L,No,244,1.9618852459016394,1.95
+temperature_c,Temperature,°C,No,4042,36.99582632360218,36.99
+temperature_c,Temperature,°C,Yes,889,38.61814398200225,38.61
+bp_systolic,Systolic blood pressure,mmHg,No,4038,118.08231054977712,118.195
+bp_systolic,Systolic blood pressure,mmHg,Yes,892,100.51163677130046,100.505
+bp_diastolic,Diastolic blood pressure,mmHg,No,4042,74.85502721425037,74.935
+bp_diastolic,Diastolic blood pressure,mmHg,Yes,890,62.89050561797753,62.97
+heart_rate,Heart rate,bpm,No,4050,77.93667407407408,77.765
+heart_rate,Heart rate,bpm,Yes,900,112.75696666666667,112.185
+wbc_count,White blood cell count,10^9/L,No,3960,7.469015151515151,7.47
+wbc_count,White blood cell count,10^9/L,Yes,868,14.935149769585255,14.915
+lactate_mmol_l,Lactate,mmol/L,No,3959,1.1891260419297802,1.18
+lactate_mmol_l,Lactate,mmol/L,Yes,881,3.814018161180477,3.84
