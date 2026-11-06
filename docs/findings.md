@@ -36,4 +36,4 @@
 - Out-of-range numeric measurements set to missing: 396
 
 ## Interpretation
-These are descriptive summaries of the supplied patient-level records. They do not establish causes, diagnose sepsis, or measure care pathways. The supplied workbook currently labels every record as sepsis-negative, so comparisons between positive and negative groups are not possible.
+These are descriptive summaries of the supplied patient-level records. They do not establish causes, diagnose sepsis, or measure care pathways. Sepsis-positive patients show markedly higher temperature, heart rate, WBC count and lactate than sepsis-negative patients, consistent with the ward-stratified distributions used to generate the data. These patterns demonstrate the analytical method; they are not clinical findings.
