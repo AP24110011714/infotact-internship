@@ -1,3 +1,4 @@
+
 import argparse
 import subprocess
 import sys
@@ -11,14 +12,21 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
-GENERATE_SCRIPT = ROOT_DIR / "scripts" / "generate_event_log.py"
-LOAD_SCRIPT = ROOT_DIR / "data_generator" / "load_to_bq.py"
+SCRIPTS = {
+    "generate": ROOT_DIR / "scripts" / "generate_event_log.py",
+    "validate": ROOT_DIR / "scripts" / "validate_event_log.py",
+    "analyze": ROOT_DIR / "data_generator" / "analyze_process_performance.py",
+    "visualize": ROOT_DIR / "data_generator" / "create_process_visualizations.py",
+    "report": ROOT_DIR / "data_generator" / "generate_bottleneck_report.py",
+    "load": ROOT_DIR / "data_generator" / "load_to_bq.py",
+    "export": ROOT_DIR / "pipeline" / "export_results.py",
+}
 
 DBT_DIR = ROOT_DIR / "dbt_project"
-
 MINING_DIR = ROOT_DIR / "mining"
-DISCOVER_SCRIPT = MINING_DIR / "discover.py"
-CONFORMANCE_SCRIPT = MINING_DIR / "conformance.py"
+TEST_DIR = ROOT_DIR / "tests"
+
+VALIDATION_REPORT = ROOT_DIR / "documentation" / "validation_report.txt"
 
 
 # =========================================================
@@ -26,15 +34,15 @@ CONFORMANCE_SCRIPT = MINING_DIR / "conformance.py"
 # =========================================================
 
 def log(message):
-    print(f"[PIPELINE] {message}")
+    print(f"[PIPELINE] {message}", flush=True)
 
 
 def warning(message):
-    print(f"[WARNING] {message}")
+    print(f"[WARNING] {message}", flush=True)
 
 
 def error(message):
-    print(f"[ERROR] {message}")
+    print(f"[ERROR] {message}", flush=True)
 
 
 # =========================================================
@@ -42,241 +50,238 @@ def error(message):
 # =========================================================
 
 def run_command(name, command, cwd=None, dry_run=False):
-    """
-    Run a pipeline command using subprocess.
 
-    Returns:
-        True  -> command succeeded
-        False -> command failed
-    """
-
-    log("=" * 70)
+    log("=" * 65)
     log(f"STARTING: {name}")
-    log(f"COMMAND : {' '.join(str(item) for item in command)}")
+    log(f"COMMAND: {' '.join(str(item) for item in command)}")
 
     if cwd:
-        log(f"WORKDIR : {cwd}")
+        log(f"WORKDIR: {cwd}")
 
     if dry_run:
-        log("DRY-RUN : command not executed")
+        log("DRY-RUN: command not executed")
         return True
 
-    start_time = time.perf_counter()
+    start = time.perf_counter()
 
     try:
         result = subprocess.run(
             command,
-            cwd=cwd,
+            cwd=cwd or ROOT_DIR,
             check=False
         )
 
-        elapsed = time.perf_counter() - start_time
+        elapsed = time.perf_counter() - start
 
         if result.returncode == 0:
-            log(f"SUCCESS : {name}")
-            log(f"TIME    : {elapsed:.2f} seconds")
+            log(f"SUCCESS: {name}")
+            log(f"TIME: {elapsed:.2f} seconds")
             return True
 
-        error(f"FAILED  : {name}")
+        error(f"FAILED: {name}")
         error(f"RETURN CODE: {result.returncode}")
-        error(f"TIME    : {elapsed:.2f} seconds")
-
-        return False
-
-    except FileNotFoundError as exc:
-        elapsed = time.perf_counter() - start_time
-
-        error(f"COMMAND NOT FOUND: {exc}")
-        error(f"TIME    : {elapsed:.2f} seconds")
-
+        error(f"TIME: {elapsed:.2f} seconds")
         return False
 
     except Exception as exc:
-        elapsed = time.perf_counter() - start_time
-
-        error(f"UNEXPECTED ERROR: {exc}")
-        error(f"TIME    : {elapsed:.2f} seconds")
-
+        error(f"FAILED: {name}: {exc}")
         return False
 
 
 # =========================================================
-# FILE / DIRECTORY CHECKS
+# PYTHON SCRIPT EXECUTION
 # =========================================================
 
-def check_file(path, step_name):
-    """
-    Check whether a required script exists.
-    """
+def run_script(stage, name, dry_run=False):
 
-    if not path.exists():
-        warning(
-            f"{step_name} skipped: file not found -> {path}"
-        )
+    script = SCRIPTS[stage]
+
+    if not script.is_file():
+        error(f"Required script not found: {script}")
         return False
-
-    return True
-
-
-def check_directory(path, step_name):
-    """
-    Check whether an optional directory exists.
-    """
-
-    if not path.exists():
-        warning(
-            f"{step_name} skipped: directory not found -> {path}"
-        )
-        return False
-
-    return True
-
-
-# =========================================================
-# GENERATE EVENTS
-# =========================================================
-
-def generate_events(dry_run=False):
-
-    if not check_file(GENERATE_SCRIPT, "Generate"):
-        return True
-
-    command = [
-        sys.executable,
-        str(GENERATE_SCRIPT)
-    ]
 
     return run_command(
-        "Generate Events",
-        command,
+        name,
+        [sys.executable, str(script)],
         cwd=ROOT_DIR,
         dry_run=dry_run
     )
 
 
 # =========================================================
-# LOAD TO BIGQUERY
+# EVENT LOG VALIDATION
 # =========================================================
 
-def load_to_bigquery(dry_run=False):
+def validate_events(dry_run=False):
 
-    if not check_file(LOAD_SCRIPT, "BigQuery Load"):
-        return True
+    success = run_script(
+        "validate",
+        "Event Log Validation",
+        dry_run
+    )
 
-    command = [
-        sys.executable,
-        str(LOAD_SCRIPT)
-    ]
+    if not success or dry_run:
+        return success
+
+    if not VALIDATION_REPORT.is_file():
+        error("Validation report was not generated.")
+        return False
+
+    report = VALIDATION_REPORT.read_text(
+        encoding="utf-8"
+    )
+
+    if "OVERALL VALIDATION STATUS: PASS" not in report:
+        error("Event log validation did not pass.")
+        return False
+
+    log("All event log validation checks passed.")
+    return True
+
+
+# =========================================================
+# PROCESS ANALYSIS
+# =========================================================
+
+def analyze_process(dry_run=False):
+
+    return run_script(
+        "analyze",
+        "Process Performance Analysis",
+        dry_run
+    )
+
+
+# =========================================================
+# VISUALIZATION
+# =========================================================
+
+def create_visualizations(dry_run=False):
+
+    return run_script(
+        "visualize",
+        "Process Visualization Generation",
+        dry_run
+    )
+
+
+# =========================================================
+# BOTTLENECK REPORT
+# =========================================================
+
+def generate_report(dry_run=False):
+
+    return run_script(
+        "report",
+        "Bottleneck Report Generation",
+        dry_run
+    )
+
+
+# =========================================================
+# AUTOMATED TESTING
+# =========================================================
+
+def run_tests(dry_run=False):
+
+    if not TEST_DIR.is_dir():
+        error("Tests directory not found.")
+        return False
 
     return run_command(
-        "Load to BigQuery",
-        command,
+        "Automated Tests",
+        [
+            sys.executable,
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            str(TEST_DIR),
+            "-p",
+            "test_*.py",
+            "-v"
+        ],
         cwd=ROOT_DIR,
         dry_run=dry_run
     )
 
 
 # =========================================================
-# DBT
+# BIGQUERY EXPORT
+# =========================================================
+
+def export_results(dry_run=False):
+
+    warning(
+        "This export replaces the existing careflow_summary "
+        "BigQuery table using WRITE_TRUNCATE."
+    )
+
+    return run_script(
+        "export",
+        "BigQuery Results Export",
+        dry_run
+    )
+
+
+# =========================================================
+# OPTIONAL DBT
 # =========================================================
 
 def run_dbt(dry_run=False):
 
-    if not check_directory(DBT_DIR, "dbt"):
-        return True
+    if not DBT_DIR.is_dir():
+        error("dbt_project directory is not available.")
+        return False
 
-    # -----------------------------------------------------
-    # dbt run
-    # -----------------------------------------------------
-
-    command_run = [
-        "dbt",
-        "run"
-    ]
+    if not dry_run and not (DBT_DIR / "dbt_project.yml").is_file():
+        error("dbt_project.yml not found.")
+        return False
 
     if not run_command(
         "dbt run",
-        command_run,
+        ["dbt", "run"],
         cwd=DBT_DIR,
         dry_run=dry_run
     ):
         return False
 
-    # -----------------------------------------------------
-    # dbt test
-    # -----------------------------------------------------
-
-    command_test = [
-        "dbt",
-        "test"
-    ]
-
     return run_command(
         "dbt test",
-        command_test,
+        ["dbt", "test"],
         cwd=DBT_DIR,
         dry_run=dry_run
     )
 
 
 # =========================================================
-# PROCESS MINING
+# OPTIONAL PROCESS MINING
 # =========================================================
 
 def run_mining(dry_run=False):
 
-    if not check_directory(MINING_DIR, "Mining"):
-        return True
+    if not MINING_DIR.is_dir():
+        error("Separate mining directory is not available.")
+        return False
 
-    # -----------------------------------------------------
-    # Process Discovery
-    # -----------------------------------------------------
+    scripts = [
+        MINING_DIR / "discover.py",
+        MINING_DIR / "conformance.py"
+    ]
 
-    if check_file(DISCOVER_SCRIPT, "Process Discovery"):
+    for script in scripts:
 
-        command = [
-            sys.executable,
-            str(DISCOVER_SCRIPT)
-        ]
+        if not script.is_file():
+            error(f"Required mining script not found: {script}")
+            return False
 
         if not run_command(
-            "Process Discovery",
-            command,
+            script.stem,
+            [sys.executable, str(script)],
             cwd=ROOT_DIR,
             dry_run=dry_run
         ):
             return False
-
-    else:
-        warning(
-            f"Process Discovery skipped: "
-            f"file not found -> {DISCOVER_SCRIPT}"
-        )
-
-    # -----------------------------------------------------
-    # Conformance Checking
-    # -----------------------------------------------------
-
-    if check_file(CONFORMANCE_SCRIPT, "Conformance Checking"):
-
-        command = [
-            sys.executable,
-            str(CONFORMANCE_SCRIPT)
-        ]
-
-        if not run_command(
-            "Conformance Checking",
-            command,
-            cwd=ROOT_DIR,
-            dry_run=dry_run
-        ):
-            return False
-
-    else:
-        warning(
-            f"Conformance Checking skipped: "
-            f"file not found -> {CONFORMANCE_SCRIPT}"
-        )
 
     return True
 
@@ -288,42 +293,54 @@ def run_mining(dry_run=False):
 def parse_arguments():
 
     parser = argparse.ArgumentParser(
-        description="CareFlow end-to-end pipeline runner."
-    )
-
-    parser.add_argument(
-        "--skip-generate",
-        action="store_true",
-        help="Skip event generation."
-    )
-
-    parser.add_argument(
-        "--skip-load",
-        action="store_true",
-        help="Skip BigQuery loading."
-    )
-
-    parser.add_argument(
-        "--skip-dbt",
-        action="store_true",
-        help="Skip dbt run and dbt test."
-    )
-
-    parser.add_argument(
-        "--skip-mine",
-        action="store_true",
-        help="Skip process mining."
+        description="CareFlow integrated pipeline runner."
     )
 
     parser.add_argument(
         "--only",
         choices=[
             "generate",
+            "validate",
+            "analyze",
+            "visualize",
+            "report",
             "load",
             "dbt",
-            "mine"
+            "mine",
+            "export",
+            "test"
         ],
         help="Run only one pipeline stage."
+    )
+
+    parser.add_argument(
+        "--include-generate",
+        action="store_true",
+        help="Include event generation."
+    )
+
+    parser.add_argument(
+        "--include-load",
+        action="store_true",
+        help="Include BigQuery event loading. May replace raw_ehr_events."
+    )
+
+    parser.add_argument(
+        "--include-export",
+        action="store_true",
+        help="Include BigQuery results export. May replace careflow_summary."
+    )
+
+    parser.add_argument(
+        "--include-dbt",
+        action="store_true",
+        help="Include dbt run and test."
+    )
+
+    parser.add_argument(
+        "--include-mine",
+        action="store_true",
+        help="Include the separate process-mining module."
     )
 
     parser.add_argument(
@@ -343,82 +360,87 @@ def main():
 
     args = parse_arguments()
 
-    log("=" * 70)
+    log("=" * 65)
     log("CAREFLOW: CLINICAL PATHWAY PROCESS MINING")
-    log("=" * 70)
-
+    log("=" * 65)
     log(f"PROJECT ROOT: {ROOT_DIR}")
 
     if args.dry_run:
         log("MODE: DRY-RUN")
 
-    pipeline_start = time.perf_counter()
-
-    # =====================================================
-    # ONLY MODE
-    # =====================================================
-
+    # Only one selected stage
     if args.only:
 
         log(f"ONLY MODE: {args.only}")
 
-        if args.only == "generate":
-            success = generate_events(args.dry_run)
+        single_stage = {
+            "generate": lambda: run_script(
+                "generate", "Generate Events", args.dry_run
+            ),
+            "validate": lambda: validate_events(args.dry_run),
+            "analyze": lambda: analyze_process(args.dry_run),
+            "visualize": lambda: create_visualizations(args.dry_run),
+            "report": lambda: generate_report(args.dry_run),
+            "load": lambda: run_script(
+                "load", "Load Events to BigQuery", args.dry_run
+            ),
+            "dbt": lambda: run_dbt(args.dry_run),
+            "mine": lambda: run_mining(args.dry_run),
+            "export": lambda: export_results(args.dry_run),
+            "test": lambda: run_tests(args.dry_run),
+        }
 
-        elif args.only == "load":
-            success = load_to_bigquery(args.dry_run)
+        start = time.perf_counter()
+        success = single_stage[args.only]()
+        elapsed = time.perf_counter() - start
 
-        elif args.only == "dbt":
-            success = run_dbt(args.dry_run)
-
-        elif args.only == "mine":
-            success = run_mining(args.dry_run)
-
-        else:
-            success = False
-
-        elapsed = time.perf_counter() - pipeline_start
-
-        log("=" * 70)
-
-        if success:
-            log("PIPELINE COMPLETED SUCCESSFULLY")
-        else:
-            error("PIPELINE FAILED")
-
+        log("=" * 65)
+        log(
+            "STAGE COMPLETED SUCCESSFULLY"
+            if success else "STAGE FAILED"
+        )
         log(f"TOTAL TIME: {elapsed:.2f} seconds")
 
         return 0 if success else 1
 
-    # =====================================================
-    # FULL PIPELINE
-    # =====================================================
+    # Default pipeline uses existing local data.
+    steps = [
+        ("Event Log Validation", validate_events),
+        ("Process Performance Analysis", analyze_process),
+        ("Process Visualizations", create_visualizations),
+        ("Bottleneck Report", generate_report),
+    ]
 
-    steps = []
-
-    if not args.skip_generate:
-        steps.append(
-            ("Generate Events", generate_events)
+    # Optional stages are included only when explicitly requested.
+    if args.include_generate:
+        steps.insert(
+            0,
+            ("Generate Events", lambda dry: run_script(
+                "generate", "Generate Events", dry
+            ))
         )
 
-    if not args.skip_load:
+    if args.include_load:
         steps.append(
-            ("Load to BigQuery", load_to_bigquery)
+            ("BigQuery Event Loading", lambda dry: run_script(
+                "load", "Load Events to BigQuery", dry
+            ))
         )
 
-    if not args.skip_dbt:
-        steps.append(
-            ("dbt", run_dbt)
-        )
+    if args.include_dbt:
+        steps.append(("dbt", run_dbt))
 
-    if not args.skip_mine:
-        steps.append(
-            ("Mining", run_mining)
-        )
+    if args.include_mine:
+        steps.append(("Process Mining", run_mining))
 
-    # =====================================================
-    # EXECUTE PIPELINE
-    # =====================================================
+    if args.include_export:
+        steps.append(("BigQuery Results Export", export_results))
+
+    steps.append(("Automated Tests", run_tests))
+
+    # Execute pipeline
+    pipeline_start = time.perf_counter()
+    completed = []
 
     for name, function in steps:
 
@@ -429,28 +451,30 @@ def main():
 
         if not success:
 
-            error("=" * 70)
+            error("=" * 65)
             error(f"PIPELINE STOPPED AT: {name}")
-            error("No later steps were executed.")
-            error("=" * 70)
+            error("Later stages were not executed.")
+            error("=" * 65)
 
-            elapsed = time.perf_counter() - pipeline_start
-
-            error(f"TOTAL TIME: {elapsed:.2f} seconds")
+            log(f"COMPLETED STAGES: {len(completed)}")
+            log(f"TOTAL TIME: {time.perf_counter() - pipeline_start:.2f} seconds")
 
             return 1
 
-    # =====================================================
-    # PIPELINE COMPLETE
-    # =====================================================
+        completed.append(name)
 
     elapsed = time.perf_counter() - pipeline_start
 
     log("")
-    log("=" * 70)
-    log("PIPELINE COMPLETED SUCCESSFULLY")
+    log("=" * 65)
+    log("CAREFLOW PIPELINE COMPLETED SUCCESSFULLY")
+    log("=" * 65)
+
+    for stage in completed:
+        log(f"COMPLETED: {stage}")
+
+    log(f"TOTAL STAGES: {len(completed)}")
     log(f"TOTAL TIME: {elapsed:.2f} seconds")
-    log("=" * 70)
 
     return 0
 
